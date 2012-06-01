@@ -1,4 +1,4 @@
-Note = define 'Note', ->
+Note = define 'Template', ->
     property 'title', String, index: true
     property 'content', String
     property 'creationDate', Date, default: Date
@@ -8,7 +8,7 @@ Note = define 'Note', ->
     property 'tagParent', String
 
 Tree = define 'Tree', ->
-    property 'type', String, default: "Note"
+    property 'type', String, default: "Template"
     property 'struct', String
 
 
