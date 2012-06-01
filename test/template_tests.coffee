@@ -4,15 +4,14 @@ Client = require('../common/test/client').Client
 app = require('../server')
 
 
-client = new Client("http://localhost:8001/")
+client = new Client("http://localhost:8888/")
 
 
 describe "Test section", ->
 
     before (done) ->
-        app.listen(8001)
-        Note.destroyAll ->
-            Tree.destroyAll done
+        app.listen(8888)
+        done()
 
     after (done) ->
         app.close()
@@ -20,4 +19,5 @@ describe "Test section", ->
 
     describe "My test", ->
         it "When I run a test, it succeeds", (done) ->
-            should.exist "my test
+            should.exist "my testi"
+            done()
