@@ -208,13 +208,11 @@ with (locals || {}) {
 var interp;
 buf.push('<div');
 buf.push(attrs({ 'id':('content') }));
-buf.push('><h1>brunch</h1><h2>Welcome</h2><ul><li><a');
-buf.push(attrs({ 'href':("http://brunch.readthedocs.org/") }));
+buf.push('><h1>Cozy template</h1><h2>Welcome</h2><ul><li><a');
+buf.push(attrs({ 'href':("https://github.com/mycozycloud/cozy-notes/wiki/Development-environment") }));
 buf.push('>Documentation</a></li><li><a');
-buf.push(attrs({ 'href':("https://github.com/brunch/brunch/issues") }));
-buf.push('>Github Issues</a></li><li><a');
-buf.push(attrs({ 'href':("https://github.com/brunch/todos") }));
-buf.push('>Todos Example App</a></li></ul></div>');
+buf.push(attrs({ 'href':("https://github.com/mycozycloud") }));
+buf.push('>Github</a></li></ul></div>');
 }
 return buf.join("");
 };
