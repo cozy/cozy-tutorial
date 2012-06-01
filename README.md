@@ -1,11 +1,9 @@
-Cozy Temlate
-==========
+# Cozy Template
 
 Cozy Template is a template project to start quickly Cozy application
 
 
-About Cozy
-==========
+# About Cozy
 
 Cozy Notes is suited to be deployed on the Cozy platform. Cozy allow you to 
 host all your personnal application in a single place you control. 
