@@ -1,6 +1,6 @@
 { "name": "cozy-template"
 , "version": "0.0.1"
-, "engines": ["node >= 0.6.0"]
+, "engines": ["node = 0.6.x"]
 , "description": "A template project for cozy applications"
 , "repository":
   {
