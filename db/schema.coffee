@@ -1,5 +1,5 @@
 Note = define 'Template', ->
-    property 'title', String, index: true
+    property 'title', String
     property 'content', String
     property 'creationDate', Date, default: Date
     property 'lastModificationDate', Date, default: Date
@@ -13,7 +13,7 @@ Tree = define 'Tree', ->
 
 # User defines user that can interact with the Cozy instance.
 User = define 'User', ->
-    property 'email', String, index: true
+    property 'email', String
     property 'password', String
     property 'owner', Boolean, default: false
     property 'activated', Boolean, default: false

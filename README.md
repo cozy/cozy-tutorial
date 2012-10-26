@@ -1,7 +1,7 @@
 # Description
 
 Cozy Template is a template project to start quickly your own application. Just
-fork it and start coding focusing on your features !
+fork it and code while focusing only on your features !
 
 
 # About Cozy
@@ -12,4 +12,4 @@ easily on your server, a single place you control. This means you can manage
 efficiently your data while protecting your privacy without technical skills.
 
 More informations and hosting services on:
-http://www.mycozycloud.com
+http://cozycloud.cc
