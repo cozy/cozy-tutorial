@@ -7,10 +7,6 @@ Note = define 'Template', ->
     property 'tags', [String]
     property 'tagParent', String
 
-Tree = define 'Tree', ->
-    property 'type', String, default: "Template"
-    property 'struct', String
-
 # User defines user that can interact with the Cozy instance.
 User = define 'User', ->
     property 'email', String
