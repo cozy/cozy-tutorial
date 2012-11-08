@@ -74,6 +74,34 @@
   globals.require.brunch = true;
 })();
 
+window.require.define({"collections/bookmark_collection": function(exports, require, module) {
+  var Bookmark, BookmarkCollection,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  Bookmark = require('../models/bookmark');
+
+  module.exports = BookmarkCollection = (function(_super) {
+
+    __extends(BookmarkCollection, _super);
+
+    BookmarkCollection.prototype.model = Bookmark;
+
+    BookmarkCollection.prototype.url = 'bookmarks';
+
+    function BookmarkCollection(view) {
+      this.view = view;
+      BookmarkCollection.__super__.constructor.call(this);
+      this.bind("add", this.view.renderOne);
+      this.bind("reset", this.view.renderAll);
+    }
+
+    return BookmarkCollection;
+
+  })(Backbone.Collection);
+  
+}});
+
 window.require.define({"initialize": function(exports, require, module) {
   var _ref, _ref1, _ref2, _ref3, _ref4;
 
@@ -153,12 +181,14 @@ window.require.define({"lib/view": function(exports, require, module) {
 
     View.prototype.getRenderData = function() {
       var _ref;
-      return (_ref = this.model) != null ? _ref.toJSON() : void 0;
+      return {
+        model: (_ref = this.model) != null ? _ref.toJSON() : void 0
+      };
     };
 
     View.prototype.render = function() {
       this.beforeRender();
-      this.$el.html(this.template(this.getRenderData()));
+      this.$el.html(this.template());
       this.afterRender();
       return this;
     };
@@ -294,9 +324,7 @@ window.require.define({"lib/view_collection": function(exports, require, module)
 
     ViewCollection.prototype.renderOne = function(model) {
       var view;
-      view = new this.view({
-        model: model
-      });
+      view = new this.view(model);
       this.$el.append(view.render().el);
       this.add(view);
       return this;
@@ -320,6 +348,31 @@ window.require.define({"lib/view_collection": function(exports, require, module)
   });
 
   module.exports = ViewCollection;
+  
+}});
+
+window.require.define({"models/bookmark": function(exports, require, module) {
+  var Bookmark,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  module.exports = Bookmark = (function(_super) {
+
+    __extends(Bookmark, _super);
+
+    function Bookmark() {
+      return Bookmark.__super__.constructor.apply(this, arguments);
+    }
+
+    Bookmark.prototype.url = 'bookmarks';
+
+    Bookmark.prototype.isNew = function() {
+      return !(this.id != null);
+    };
+
+    return Bookmark;
+
+  })(Backbone.Model);
   
 }});
 
@@ -347,13 +400,17 @@ window.require.define({"routers/app_router": function(exports, require, module) 
 }});
 
 window.require.define({"views/app_view": function(exports, require, module) {
-  var AppRouter, AppView, View,
+  var AppRouter, AppView, BookmarkCollection, BookmarksView, View,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   View = require('../lib/view');
 
   AppRouter = require('../routers/app_router');
+
+  BookmarksView = require('./bookmarks_view');
+
+  BookmarkCollection = require('../collections/bookmark_collection');
 
   module.exports = AppView = (function(_super) {
 
@@ -373,10 +430,104 @@ window.require.define({"views/app_view": function(exports, require, module) {
       return this.router = CozyApp.Routers.AppRouter = new AppRouter();
     };
 
+    AppView.prototype.afterRender = function() {
+      this.bookmarksView = new BookmarksView();
+      return this.bookmarksView.bookmarks.add([
+        {
+          title: "Cozy Cloud",
+          url: "https://cozycloud.fr"
+        }, {
+          title: "Cozy Blog",
+          url: "http://blog.cozycloud.fr"
+        }
+      ]);
+    };
+
     return AppView;
 
   })(View);
   
+}});
+
+window.require.define({"views/bookmark_view": function(exports, require, module) {
+  var BookmarkView, View,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  View = require('../lib/view');
+
+  module.exports = BookmarkView = (function(_super) {
+
+    __extends(BookmarkView, _super);
+
+    BookmarkView.prototype.className = 'bookmark';
+
+    BookmarkView.prototype.tagName = 'div';
+
+    function BookmarkView(model) {
+      this.model = model;
+      BookmarkView.__super__.constructor.call(this);
+    }
+
+    BookmarkView.prototype.template = function() {
+      var template;
+      template = require('./templates/bookmark');
+      return template(this.getRenderData());
+    };
+
+    return BookmarkView;
+
+  })(View);
+  
+}});
+
+window.require.define({"views/bookmarks_view": function(exports, require, module) {
+  var BookmarkCollection, BookmarkView, BookmarksView, ViewCollection,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  ViewCollection = require('../lib/view_collection');
+
+  BookmarkView = require('./bookmark_view');
+
+  BookmarkCollection = require('../collections/bookmark_collection');
+
+  module.exports = BookmarksView = (function(_super) {
+
+    __extends(BookmarksView, _super);
+
+    function BookmarksView() {
+      return BookmarksView.__super__.constructor.apply(this, arguments);
+    }
+
+    BookmarksView.prototype.el = '#bookmark-list';
+
+    BookmarksView.prototype.view = BookmarkView;
+
+    BookmarksView.prototype.collection = BookmarkCollection;
+
+    BookmarksView.prototype.initialize = function() {
+      return this.bookmarks = new this.collection(this);
+    };
+
+    return BookmarksView;
+
+  })(ViewCollection);
+  
+}});
+
+window.require.define({"views/templates/bookmark": function(exports, require, module) {
+  module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+  attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+  var buf = [];
+  with (locals || {}) {
+  var interp;
+  buf.push('<div class="title">' + escape((interp = model.title) == null ? '' : interp) + '</div><div class="url"> <a');
+  buf.push(attrs({ 'href':("" + (model.url) + "") }, {"href":true}));
+  buf.push('>' + escape((interp = model.url) == null ? '' : interp) + '</a></div>');
+  }
+  return buf.join("");
+  };
 }});
 
 window.require.define({"views/templates/home": function(exports, require, module) {
