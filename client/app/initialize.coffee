@@ -1,13 +1,18 @@
-{BrunchApplication} = require 'helpers'
-{MainRouter} = require 'routers/main_router'
-{HomeView} = require 'views/home_view'
+# App Namespace
+# Change `CozyApp` to your app's name
+@CozyApp ?= {}
+CozyApp.Routers ?= {}
+CozyApp.Views ?= {}
+CozyApp.Models ?= {}
+CozyApp.Collections ?= {}
 
-class exports.Application extends BrunchApplication
-  # This callback would be executed on document ready event.
-  # If you have a big application, perhaps it's a good idea to
-  # group things by their type e.g. `@views = {}; @views.home = new HomeView`.
-  initialize: ->
-    @router = new MainRouter
-    @homeView = new HomeView
+$ ->
+    # Load App Helpers
+    require '../lib/app_helpers'
 
-window.app = new exports.Application
+    # Initialize App
+    CozyApp.Views.appView = new AppView = require 'views/app_view'
+    CozyApp.Views.appView.render()
+
+    # Initialize Backbone History
+    Backbone.history.start pushState: yes

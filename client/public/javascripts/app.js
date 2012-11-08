@@ -8,7 +8,7 @@
   var cache = {};
 
   var has = function(object, name) {
-    return hasOwnProperty.call(object, name);
+    return ({}).hasOwnProperty.call(object, name);
   };
 
   var expand = function(root, name) {
@@ -37,7 +37,7 @@
     return function(name) {
       var dir = dirname(path);
       var absolute = expand(dir, name);
-      return require(absolute);
+      return globals.require(absolute);
     };
   };
 
@@ -74,136 +74,318 @@
   globals.require.brunch = true;
 })();
 
-window.require.define({"helpers": function(exports, require, module) {
-  (function() {
-
-    exports.BrunchApplication = (function() {
-
-      function BrunchApplication() {
-        var _this = this;
-        $(function() {
-          _this.initialize(_this);
-          return Backbone.history.start();
-        });
-      }
-
-      BrunchApplication.prototype.initialize = function() {
-        return null;
-      };
-
-      return BrunchApplication;
-
-    })();
-
-  }).call(this);
-  
-}});
-
 window.require.define({"initialize": function(exports, require, module) {
-  (function() {
-    var BrunchApplication, HomeView, MainRouter,
-      __hasProp = Object.prototype.hasOwnProperty,
-      __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+  var _ref, _ref1, _ref2, _ref3, _ref4;
 
-    BrunchApplication = require('helpers').BrunchApplication;
+  if ((_ref = this.CozyApp) == null) {
+    this.CozyApp = {};
+  }
 
-    MainRouter = require('routers/main_router').MainRouter;
+  if ((_ref1 = CozyApp.Routers) == null) {
+    CozyApp.Routers = {};
+  }
 
-    HomeView = require('views/home_view').HomeView;
+  if ((_ref2 = CozyApp.Views) == null) {
+    CozyApp.Views = {};
+  }
 
-    exports.Application = (function(_super) {
+  if ((_ref3 = CozyApp.Models) == null) {
+    CozyApp.Models = {};
+  }
 
-      __extends(Application, _super);
+  if ((_ref4 = CozyApp.Collections) == null) {
+    CozyApp.Collections = {};
+  }
 
-      function Application() {
-        Application.__super__.constructor.apply(this, arguments);
-      }
-
-      Application.prototype.initialize = function() {
-        this.router = new MainRouter;
-        return this.homeView = new HomeView;
-      };
-
-      return Application;
-
-    })(BrunchApplication);
-
-    window.app = new exports.Application;
-
-  }).call(this);
+  $(function() {
+    var AppView;
+    require('../lib/app_helpers');
+    CozyApp.Views.appView = new (AppView = require('views/app_view'));
+    CozyApp.Views.appView.render();
+    return Backbone.history.start({
+      pushState: true
+    });
+  });
   
 }});
 
-window.require.define({"routers/main_router": function(exports, require, module) {
+window.require.define({"lib/app_helpers": function(exports, require, module) {
+  
   (function() {
-    var __hasProp = Object.prototype.hasOwnProperty,
-      __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
-
-    exports.MainRouter = (function(_super) {
-
-      __extends(MainRouter, _super);
-
-      function MainRouter() {
-        MainRouter.__super__.constructor.apply(this, arguments);
+    return (function() {
+      var console, dummy, method, methods, _results;
+      console = window.console = window.console || {};
+      method = void 0;
+      dummy = function() {};
+      methods = 'assert,count,debug,dir,dirxml,error,exception,\
+                     group,groupCollapsed,groupEnd,info,log,markTimeline,\
+                     profile,profileEnd,time,timeEnd,trace,warn'.split(',');
+      _results = [];
+      while (method = methods.pop()) {
+        _results.push(console[method] = console[method] || dummy);
       }
-
-      MainRouter.prototype.routes = {
-        '': 'home'
-      };
-
-      MainRouter.prototype.home = function() {
-        return $('body').html(app.homeView.render().el);
-      };
-
-      return MainRouter;
-
-    })(Backbone.Router);
-
-  }).call(this);
+      return _results;
+    })();
+  })();
   
 }});
 
-window.require.define({"views/home_view": function(exports, require, module) {
-  (function() {
-    var __hasProp = Object.prototype.hasOwnProperty,
-      __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+window.require.define({"lib/view": function(exports, require, module) {
+  var View,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-    exports.HomeView = (function(_super) {
+  module.exports = View = (function(_super) {
 
-      __extends(HomeView, _super);
+    __extends(View, _super);
 
-      function HomeView() {
-        HomeView.__super__.constructor.apply(this, arguments);
+    function View() {
+      return View.__super__.constructor.apply(this, arguments);
+    }
+
+    View.prototype.tagName = 'section';
+
+    View.prototype.template = function() {};
+
+    View.prototype.initialize = function() {
+      return this.render();
+    };
+
+    View.prototype.getRenderData = function() {
+      var _ref;
+      return (_ref = this.model) != null ? _ref.toJSON() : void 0;
+    };
+
+    View.prototype.render = function() {
+      this.beforeRender();
+      this.$el.html(this.template(this.getRenderData()));
+      this.afterRender();
+      return this;
+    };
+
+    View.prototype.beforeRender = function() {};
+
+    View.prototype.afterRender = function() {};
+
+    View.prototype.destroy = function() {
+      this.undelegateEvents();
+      this.$el.removeData().unbind();
+      this.remove();
+      return Backbone.View.prototype.remove.call(this);
+    };
+
+    return View;
+
+  })(Backbone.View);
+  
+}});
+
+window.require.define({"lib/view_collection": function(exports, require, module) {
+  var View, ViewCollection, methods,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  View = require('./view');
+
+  ViewCollection = (function(_super) {
+
+    __extends(ViewCollection, _super);
+
+    function ViewCollection() {
+      this.renderOne = __bind(this.renderOne, this);
+      return ViewCollection.__super__.constructor.apply(this, arguments);
+    }
+
+    ViewCollection.prototype.collection = new Backbone.Collection();
+
+    ViewCollection.prototype.view = new View();
+
+    ViewCollection.prototype.views = [];
+
+    ViewCollection.prototype.length = function() {
+      return this.views.length;
+    };
+
+    ViewCollection.prototype.add = function(views, options) {
+      var view, _i, _len;
+      if (options == null) {
+        options = {};
       }
+      views = _.isArray(views) ? views.slice() : [views];
+      for (_i = 0, _len = views.length; _i < _len; _i++) {
+        view = views[_i];
+        if (!this.get(view.cid)) {
+          this.views.push(view);
+          if (!options.silent) {
+            this.trigger('add', view, this);
+          }
+        }
+      }
+      return this;
+    };
 
-      HomeView.prototype.id = 'home-view';
+    ViewCollection.prototype.get = function(cid) {
+      return this.find(function(view) {
+        return view.cid === cid;
+      }) || null;
+    };
 
-      HomeView.prototype.render = function() {
-        $(this.el).html(require('./templates/home'));
-        return this;
-      };
+    ViewCollection.prototype.remove = function(views, options) {
+      var view, _i, _len;
+      if (options == null) {
+        options = {};
+      }
+      views = _.isArray(views) ? views.slice() : [views];
+      for (_i = 0, _len = views.length; _i < _len; _i++) {
+        view = views[_i];
+        this.destroy(view);
+        if (!options.silent) {
+          this.trigger('remove', view, this);
+        }
+      }
+      return this;
+    };
 
-      return HomeView;
+    ViewCollection.prototype.destroy = function(view, options) {
+      var _views;
+      if (view == null) {
+        view = this;
+      }
+      if (options == null) {
+        options = {};
+      }
+      _views = this.filter(_view)(function() {
+        return view.cid !== _view.cid;
+      });
+      this.views = _views;
+      view.undelegateEvents();
+      view.$el.removeData().unbind();
+      view.remove();
+      Backbone.View.prototype.remove.call(view);
+      if (!options.silent) {
+        this.trigger('remove', view, this);
+      }
+      return this;
+    };
 
-    })(Backbone.View);
+    ViewCollection.prototype.reset = function(views, options) {
+      var view, _i, _j, _len, _len1, _ref;
+      if (options == null) {
+        options = {};
+      }
+      views = _.isArray(views) ? views.slice() : [views];
+      _ref = this.views;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        view = _ref[_i];
+        this.destroy(view, options);
+      }
+      if (views.length !== 0) {
+        for (_j = 0, _len1 = views.length; _j < _len1; _j++) {
+          view = views[_j];
+          this.add(view, options);
+        }
+        if (!options.silent) {
+          this.trigger('reset', view, this);
+        }
+      }
+      return this;
+    };
 
-  }).call(this);
+    ViewCollection.prototype.renderOne = function(model) {
+      var view;
+      view = new this.view({
+        model: model
+      });
+      this.$el.append(view.render().el);
+      this.add(view);
+      return this;
+    };
+
+    ViewCollection.prototype.renderAll = function() {
+      this.collection.each(this.renderOne);
+      return this;
+    };
+
+    return ViewCollection;
+
+  })(View);
+
+  methods = ['forEach', 'each', 'map', 'reduce', 'reduceRight', 'find', 'detect', 'filter', 'select', 'reject', 'every', 'all', 'some', 'any', 'include', 'contains', 'invoke', 'max', 'min', 'sortBy', 'sortedIndex', 'toArray', 'size', 'first', 'initial', 'rest', 'last', 'without', 'indexOf', 'shuffle', 'lastIndexOf', 'isEmpty', 'groupBy'];
+
+  _.each(methods, function(method) {
+    return ViewCollection.prototype[method] = function() {
+      return _[method].apply(_, [this.views].concat(_.toArray(arguments)));
+    };
+  });
+
+  module.exports = ViewCollection;
+  
+}});
+
+window.require.define({"routers/app_router": function(exports, require, module) {
+  var AppRouter,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  module.exports = AppRouter = (function(_super) {
+
+    __extends(AppRouter, _super);
+
+    function AppRouter() {
+      return AppRouter.__super__.constructor.apply(this, arguments);
+    }
+
+    AppRouter.prototype.routes = {
+      '': function() {}
+    };
+
+    return AppRouter;
+
+  })(Backbone.Router);
+  
+}});
+
+window.require.define({"views/app_view": function(exports, require, module) {
+  var AppRouter, AppView, View,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  View = require('../lib/view');
+
+  AppRouter = require('../routers/app_router');
+
+  module.exports = AppView = (function(_super) {
+
+    __extends(AppView, _super);
+
+    function AppView() {
+      return AppView.__super__.constructor.apply(this, arguments);
+    }
+
+    AppView.prototype.el = 'body.application';
+
+    AppView.prototype.template = function() {
+      return require('./templates/home');
+    };
+
+    AppView.prototype.initialize = function() {
+      return this.router = CozyApp.Routers.AppRouter = new AppRouter();
+    };
+
+    return AppView;
+
+  })(View);
   
 }});
 
 window.require.define({"views/templates/home": function(exports, require, module) {
-  module.exports = function anonymous(locals, attrs, escape, rethrow) {
-  var attrs = jade.attrs, escape = jade.escape, rethrow = jade.rethrow;
+  module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+  attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
   var buf = [];
   with (locals || {}) {
   var interp;
-  buf.push('<div');
-  buf.push(attrs({ 'id':('content') }));
-  buf.push('><h1>Cozy template</h1><h2>Welcome</h2><ul><li><a');
-  buf.push(attrs({ 'href':("https://github.com/mycozycloud/cozy-notes/wiki/Development-environment") }));
-  buf.push('>Documentation</a></li><li><a');
-  buf.push(attrs({ 'href':("https://github.com/mycozycloud") }));
-  buf.push('>Github</a></li></ul></div>');
+  buf.push('<div id="content"><h1>Cozy template</h1><h2>Welcome</h2><ul><li> <a href="https://github.com/mycozycloud/cozy-setup">Documentation</a></li><li> <a href="https://github.com/mycozycloud">Github</a></li></ul></div>');
   }
   return buf.join("");
   };
