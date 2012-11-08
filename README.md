@@ -1,7 +1,10 @@
+# Bookmark application
+
+Store all your bookmarks here !
+
 # Description
 
-Cozy Template is a template project to start quickly your own application. Just
-fork it and code while focusing only on your features !
+Source code for Make Your Own App tutorial.
 
 
 # About Cozy
