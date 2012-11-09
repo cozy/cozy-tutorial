@@ -223,6 +223,8 @@ window.require.define({"lib/view_collection": function(exports, require, module)
     __extends(ViewCollection, _super);
 
     function ViewCollection() {
+      this.renderAll = __bind(this.renderAll, this);
+
       this.renderOne = __bind(this.renderOne, this);
       return ViewCollection.__super__.constructor.apply(this, arguments);
     }
@@ -431,16 +433,14 @@ window.require.define({"views/app_view": function(exports, require, module) {
     };
 
     AppView.prototype.afterRender = function() {
+      var _this = this;
       this.bookmarksView = new BookmarksView();
-      return this.bookmarksView.bookmarks.add([
-        {
-          title: "Cozy Cloud",
-          url: "https://cozycloud.fr"
-        }, {
-          title: "Cozy Blog",
-          url: "http://blog.cozycloud.fr"
+      this.bookmarksView.$el.html('<em>loading...</em>');
+      return this.bookmarksView.collection.fetch({
+        success: function() {
+          return _this.bookmarksView.$el.find('em').remove();
         }
-      ]);
+      });
     };
 
     return AppView;
@@ -504,10 +504,8 @@ window.require.define({"views/bookmarks_view": function(exports, require, module
 
     BookmarksView.prototype.view = BookmarkView;
 
-    BookmarksView.prototype.collection = BookmarkCollection;
-
     BookmarksView.prototype.initialize = function() {
-      return this.bookmarks = new this.collection(this);
+      return this.collection = new BookmarkCollection(this);
     };
 
     return BookmarksView;

@@ -6,7 +6,6 @@ module.exports = class BookmarksView extends ViewCollection
     el: '#bookmark-list'
 
     view: BookmarkView
-    collection: BookmarkCollection
 
     initialize: ->
-        @bookmarks = new @collection @
+        @collection = new BookmarkCollection @

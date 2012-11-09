@@ -14,7 +14,7 @@ module.exports = class AppView extends View
 
     afterRender: ->
         @bookmarksView = new BookmarksView()
-        @bookmarksView.bookmarks.add [
-            {title: "Cozy Cloud", url: "https://cozycloud.fr"}
-            {title: "Cozy Blog", url: "http://blog.cozycloud.fr"}
-        ]
+        
+        @bookmarksView.$el.html '<em>loading...</em>'
+        @bookmarksView.collection.fetch
+            success: => @bookmarksView.$el.find('em').remove()

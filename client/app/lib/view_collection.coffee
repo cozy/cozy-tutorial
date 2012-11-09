@@ -52,7 +52,7 @@ class ViewCollection extends View
         @add view
         @
 
-    renderAll: ->
+    renderAll: =>
         @collection.each @renderOne
         @
 
