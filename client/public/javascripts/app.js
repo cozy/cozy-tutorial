@@ -402,7 +402,8 @@ window.require.define({"routers/app_router": function(exports, require, module) 
 }});
 
 window.require.define({"views/app_view": function(exports, require, module) {
-  var AppRouter, AppView, BookmarkCollection, BookmarksView, View,
+  var AppRouter, AppView, Bookmark, BookmarksView, View,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -412,17 +413,22 @@ window.require.define({"views/app_view": function(exports, require, module) {
 
   BookmarksView = require('./bookmarks_view');
 
-  BookmarkCollection = require('../collections/bookmark_collection');
+  Bookmark = require('../models/bookmark');
 
   module.exports = AppView = (function(_super) {
 
     __extends(AppView, _super);
 
     function AppView() {
+      this.onCreateClicked = __bind(this.onCreateClicked, this);
       return AppView.__super__.constructor.apply(this, arguments);
     }
 
     AppView.prototype.el = 'body.application';
+
+    AppView.prototype.events = {
+      'click .create-button': 'onCreateClicked'
+    };
 
     AppView.prototype.template = function() {
       return require('./templates/home');
@@ -441,6 +447,29 @@ window.require.define({"views/app_view": function(exports, require, module) {
           return _this.bookmarksView.$el.find('em').remove();
         }
       });
+    };
+
+    AppView.prototype.onCreateClicked = function() {
+      var bookmark, title, url,
+        _this = this;
+      title = $('.title-field').val();
+      url = $('.url-field').val();
+      if ((title != null ? title.length : void 0) > 0 && (url != null ? url.length : void 0) > 0) {
+        bookmark = new Bookmark({
+          title: title,
+          url: url
+        });
+        return this.bookmarksView.collection.create(bookmark, {
+          success: function() {
+            return alert("bookmark added");
+          },
+          error: function() {
+            return alert("Server error occured, bookmark was not saved");
+          }
+        });
+      } else {
+        return alert('Both fields are required');
+      }
     };
 
     return AppView;
@@ -534,7 +563,7 @@ window.require.define({"views/templates/home": function(exports, require, module
   var buf = [];
   with (locals || {}) {
   var interp;
-  buf.push('<div id="content"><h1>My bookmarks</h1><div id="bookmark-list"></div></div>');
+  buf.push('<div id="content"> <h1>My bookmarks </h1><div id="create-bookmark-form"><input placeholder="title" class="title-field"/><input placeholder="url" class="url-field"/><button class="btn create-button">create</button></div><div id="bookmark-list"></div></div>');
   }
   return buf.join("");
   };

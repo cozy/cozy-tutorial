@@ -9517,28 +9517,32 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
 ;
 
 /*!
- * Lo-Dash v0.8.2 <http://lodash.com>
+ * Lo-Dash v0.9.1 <http://lodash.com>
  * (c) 2012 John-David Dalton <http://allyoucanleet.com/>
  * Based on Underscore.js 1.4.2 <http://underscorejs.org>
  * (c) 2009-2012 Jeremy Ashkenas, DocumentCloud Inc.
  * Available under MIT license <http://lodash.com/license>
  */
 ;(function(window, undefined) {
-  'use strict';
 
   /** Detect free variable `exports` */
-  var freeExports = typeof exports == 'object' && exports &&
-    (typeof global == 'object' && global && global == global.global && (window = global), exports);
+  var freeExports = typeof exports == 'object' && exports;
 
-  /** Native prototype shortcuts */
-  var ArrayProto = Array.prototype,
-      BoolProto = Boolean.prototype,
-      ObjectProto = Object.prototype,
-      NumberProto = Number.prototype,
-      StringProto = String.prototype;
+  /** Detect free variable `global` and use it as `window` */
+  var freeGlobal = typeof global == 'object' && global;
+  if (freeGlobal.global === freeGlobal) {
+    window = freeGlobal;
+  }
+
+  /** Used for array and object method references */
+  var arrayRef = [],
+      objectRef = {};
 
   /** Used to generate unique IDs */
   var idCounter = 0;
+
+  /** Used internally to indicate various things */
+  var indicatorObject = {};
 
   /** Used by `cachedContains` as the default size when optimizations are enabled for large arrays */
   var largeArraySize = 30;
@@ -9565,7 +9569,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
 
   /** Used to detect if a method is native */
   var reNative = RegExp('^' +
-    (ObjectProto.valueOf + '')
+    (objectRef.valueOf + '')
       .replace(/[.*+?^=!:${}()|[\]\/\\]/g, '\\$&')
       .replace(/valueOf|for [^\]]+/g, '.+?') + '$'
   );
@@ -9590,19 +9594,20 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
 
   /** Native method shortcuts */
   var ceil = Math.ceil,
-      concat = ArrayProto.concat,
+      concat = arrayRef.concat,
       floor = Math.floor,
       getPrototypeOf = reNative.test(getPrototypeOf = Object.getPrototypeOf) && getPrototypeOf,
-      hasOwnProperty = ObjectProto.hasOwnProperty,
-      push = ArrayProto.push,
-      propertyIsEnumerable = ObjectProto.propertyIsEnumerable,
-      slice = ArrayProto.slice,
-      toString = ObjectProto.toString;
+      hasOwnProperty = objectRef.hasOwnProperty,
+      push = arrayRef.push,
+      propertyIsEnumerable = objectRef.propertyIsEnumerable,
+      slice = arrayRef.slice,
+      toString = objectRef.toString;
 
   /* Native method shortcuts for methods with the same name as other `lodash` methods */
   var nativeBind = reNative.test(nativeBind = slice.bind) && nativeBind,
       nativeIsArray = reNative.test(nativeIsArray = Array.isArray) && nativeIsArray,
       nativeIsFinite = window.isFinite,
+      nativeIsNaN = window.isNaN,
       nativeKeys = reNative.test(nativeKeys = Object.keys) && nativeKeys,
       nativeMax = Math.max,
       nativeMin = Math.min,
@@ -9619,10 +9624,6 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
       regexpClass = '[object RegExp]',
       stringClass = '[object String]';
 
-  /** Timer shortcuts */
-  var clearTimeout = window.clearTimeout,
-      setTimeout = window.setTimeout;
-
   /**
    * Detect the JScript [[DontEnum]] bug:
    *
@@ -9630,6 +9631,9 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * made non-enumerable as well.
    */
   var hasDontEnumBug;
+
+  /** Detect if own properties are iterated after inherited properties (IE < 9) */
+  var iteratesOwnLast;
 
   /**
    * Detect if `Array#shift` and `Array#splice` augment array-like objects
@@ -9641,26 +9645,21 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * The `shift()` method is buggy in IE 8 compatibility mode, while `splice()`
    * is buggy regardless of mode in IE < 9 and buggy in compatibility mode in IE 9.
    */
-  var hasObjectSpliceBug;
-
-  /** Detect if own properties are iterated after inherited properties (IE < 9) */
-  var iteratesOwnLast;
+  var hasObjectSpliceBug = (hasObjectSpliceBug = { '0': 1, 'length': 1 },
+    arrayRef.splice.call(hasObjectSpliceBug, 0, 1), hasObjectSpliceBug[0]);
 
   /** Detect if an `arguments` object's indexes are non-enumerable (IE < 9) */
   var noArgsEnum = true;
 
   (function() {
-    var object = { '0': 1, 'length': 1 },
-        props = [];
-
+    var props = [];
     function ctor() { this.x = 1; }
     ctor.prototype = { 'valueOf': 1, 'y': 1 };
     for (var prop in new ctor) { props.push(prop); }
     for (prop in arguments) { noArgsEnum = !prop; }
 
-    hasDontEnumBug = (props + '').length < 4;
+    hasDontEnumBug = !/valueOf/.test(props);
     iteratesOwnLast = props[0] != 'x';
-    hasObjectSpliceBug = (props.splice.call(object, 0, 1), object[0]);
   }(1));
 
   /** Detect if an `arguments` object's [[Class]] is unresolvable (Firefox < 4, IE < 9) */
@@ -9681,19 +9680,16 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * Detect if a node's [[Class]] is unresolvable (IE < 9)
    * and that the JS engine won't error when attempting to coerce an object to
    * a string without a `toString` property value of `typeof` "function".
-   */
   try {
     var noNodeClass = ({ 'toString': 0 } + '', toString.call(window.document || 0) == objectClass);
   } catch(e) { }
+   */
 
   /* Detect if `Function#bind` exists and is inferred to be fast (all but V8) */
   var isBindFast = nativeBind && /\n|Opera/.test(nativeBind + toString.call(window.opera));
 
   /* Detect if `Object.keys` exists and is inferred to be fast (IE, Opera, V8) */
   var isKeysFast = nativeKeys && /^.+$|true/.test(nativeKeys + !!window.attachEvent);
-
-  /* Detect if strict mode, "use strict", is inferred to be fast (V8) */
-  var isStrictFast = !isBindFast;
 
   /**
    * Detect if sourceURL syntax is usable without erroring:
@@ -9726,8 +9722,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
     'object': true,
     'number': false,
     'string': false,
-    'undefined': false,
-    'unknown': true
+    'undefined': false
   };
 
   /** Used to escape characters for inclusion in compiled string literals */
@@ -9823,21 +9818,21 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    */
   var iteratorTemplate = template(
     // conditional strict mode
-    '<% if (useStrict) { %>\'use strict\';\n<% } %>' +
+    '<% if (obj.useStrict) { %>\'use strict\';\n<% } %>' +
 
     // the `iteratee` may be reassigned by the `top` snippet
     'var index, value, iteratee = <%= firstArg %>, ' +
     // assign the `result` variable an initial value
-    'result = <%= init || firstArg %>;\n' +
+    'result = <%= firstArg %>;\n' +
     // exit early if the first argument is falsey
     'if (!<%= firstArg %>) return result;\n' +
     // add code before the iteration branches
     '<%= top %>;\n' +
 
-    // the following branch is for iterating arrays and array-like objects
-    '<% if (arrayBranch) { %>' +
-    'var length = iteratee.length; index = -1;' +
-    '  <% if (objectBranch) { %>\nif (length === +length) {<% } %>' +
+    // array-like iteration:
+    '<% if (arrayLoop) { %>' +
+    'var length = iteratee.length; index = -1;\n' +
+    'if (typeof length == \'number\') {' +
 
     // add support for accessing string characters by index if needed
     '  <% if (noCharByIndex) { %>\n' +
@@ -9846,25 +9841,22 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
     '  }' +
     '  <% } %>\n' +
 
-    '  <%= arrayBranch.beforeLoop %>;\n' +
+    // iterate over the array-like value
     '  while (++index < length) {\n' +
     '    value = iteratee[index];\n' +
-    '    <%= arrayBranch.inLoop %>\n' +
-    '  }' +
-    '  <% if (objectBranch) { %>\n}<% } %>' +
-    '<% } %>' +
+    '    <%= arrayLoop %>\n' +
+    '  }\n' +
+    '}\n' +
+    'else {' +
 
-    // the following branch is for iterating an object's own/inherited properties
-    '<% if (objectBranch) { %>' +
-    '  <% if (arrayBranch) { %>\nelse {' +
-
+    // object iteration:
     // add support for iterating over `arguments` objects if needed
     '  <%  } else if (noArgsEnum) { %>\n' +
     '  var length = iteratee.length; index = -1;\n' +
     '  if (length && isArguments(iteratee)) {\n' +
     '    while (++index < length) {\n' +
     '      value = iteratee[index += \'\'];\n' +
-    '      <%= objectBranch.inLoop %>\n' +
+    '      <%= objectLoop %>\n' +
     '    }\n' +
     '  } else {' +
     '  <% } %>' +
@@ -9885,18 +9877,16 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
     '  var ownIndex = -1,\n' +
     '      ownProps = objectTypes[typeof iteratee] ? nativeKeys(iteratee) : [],\n' +
     '      length = ownProps.length;\n\n' +
-    '  <%= objectBranch.beforeLoop %>;\n' +
     '  while (++ownIndex < length) {\n' +
     '    index = ownProps[ownIndex];\n' +
     '    <% if (!hasDontEnumBug) { %>if (!(skipProto && index == \'prototype\')) {\n  <% } %>' +
     '    value = iteratee[index];\n' +
-    '    <%= objectBranch.inLoop %>\n' +
+    '    <%= objectLoop %>\n' +
     '    <% if (!hasDontEnumBug) { %>}\n<% } %>' +
     '  }' +
 
     // else using a for-in loop
     '  <% } else { %>\n' +
-    '  <%= objectBranch.beforeLoop %>;\n' +
     '  for (index in iteratee) {<%' +
     '    if (!hasDontEnumBug || useHas) { %>\n    if (<%' +
     '      if (!hasDontEnumBug) { %>!(skipProto && index == \'prototype\')<% }' +
@@ -9905,7 +9895,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
     '    %>) {' +
     '    <% } %>\n' +
     '    value = iteratee[index];\n' +
-    '    <%= objectBranch.inLoop %>;' +
+    '    <%= objectLoop %>;' +
     '    <% if (!hasDontEnumBug || useHas) { %>\n    }<% } %>\n' +
     '  }' +
     '  <% } %>' +
@@ -9923,12 +9913,11 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
     '        %>!(ctor && ctor.prototype === iteratee) && <%' +
     '      } %>hasOwnProperty.call(iteratee, index)) {\n' +
     '    value = iteratee[index];\n' +
-    '    <%= objectBranch.inLoop %>\n' +
+    '    <%= objectLoop %>\n' +
     '  }' +
     '    <% } %>' +
     '  <% } %>' +
-    '  <% if (arrayBranch || noArgsEnum) { %>\n}<% } %>' +
-    '<% } %>\n' +
+    '  <% if (arrayLoop || noArgsEnum) { %>\n}<% } %>\n' +
 
     // add code to the bottom of the iteration function
     '<%= bottom %>;\n' +
@@ -9937,38 +9926,29 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
   );
 
   /**
-   * Reusable iterator options shared by `every`, `filter`, forEach`, `forIn`,
-   * `forOwn`, `map`, and `some`.
+   * Reusable iterator options shared by `forEach`, `forIn`, and `forOwn`.
    */
   var forEachIteratorOptions = {
     'args': 'collection, callback, thisArg',
     'top': 'callback = createCallback(callback, thisArg)',
-    'inLoop': 'if (callback(value, index, collection) === false) return result'
+    'arrayLoop': 'if (callback(value, index, collection) === false) return result',
+    'objectLoop': 'if (callback(value, index, collection) === false) return result'
   };
 
-  /** Reusable iterator options for `every` and `some` */
-  var everyIteratorOptions = {
-    'init': 'true',
-    'inLoop': 'if (!callback(value, index, collection)) return !result'
-  };
-
-  /** Reusable iterator options for `bindAll`, `defaults`, and `extend` */
+  /** Reusable iterator options for `defaults`, and `extend` */
   var extendIteratorOptions = {
     'useHas': false,
-    'useStrict': false,
     'args': 'object',
     'top':
       'for (var argsIndex = 1, argsLength = arguments.length; argsIndex < argsLength; argsIndex++) {\n' +
       '  if (iteratee = arguments[argsIndex]) {',
-    'inLoop': 'result[index] = value',
+    'objectLoop': 'result[index] = value',
     'bottom': '  }\n}'
   };
 
   /** Reusable iterator options for `forIn` and `forOwn` */
   var forOwnIteratorOptions = {
-    'inLoop': {
-      'object': forEachIteratorOptions.inLoop
-    }
+    'arrayLoop': null
   };
 
   /*--------------------------------------------------------------------------*/
@@ -10119,84 +10099,52 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
   }
 
   /**
-   * Creates compiled iteration functions. The iteration function will be created
-   * to iterate over only objects if the first argument of `options.args` is
-   * "object" or `options.inLoop.array` is falsey.
+   * Creates compiled iteration functions.
    *
    * @private
-   * @param {Object} [options1, options2, ...] The compile options objects.
-   *
+   * @param {Object} [options1, options2, ...] The compile options object(s).
    *  useHas - A boolean to specify using `hasOwnProperty` checks in the object loop.
-   *
-   *  useStrict - A boolean to specify including the "use strict" directive.
-   *
    *  args - A string of comma separated arguments the iteration function will accept.
-   *
-   *  init - A string to specify the initial value of the `result` variable.
-   *
    *  top - A string of code to execute before the iteration branches.
-   *
-   *  beforeLoop - A string or object containing an "array" or "object" property
-   *   of code to execute before the array or object loops.
-   *
-   *  inLoop - A string or object containing an "array" or "object" property
-   *   of code to execute in the array or object loops.
-   *
-   *  bottom - A string of code to execute after the iteration branches but
-   *   before the `result` is returned.
+   *  arrayLoop - A string of code to execute in the array loop.
+   *  objectLoop - A string of code to execute in the object loop.
+   *  bottom - A string of code to execute after the iteration branches.
    *
    * @returns {Function} Returns the compiled function.
    */
   function createIterator() {
     var data = {
+      'arrayLoop': '',
       'bottom': '',
       'hasDontEnumBug': hasDontEnumBug,
-      'init': '',
       'isKeysFast': isKeysFast,
+      'objectLoop': '',
       'noArgsEnum': noArgsEnum,
       'noCharByIndex': noCharByIndex,
       'shadowed': shadowed,
       'top': '',
-      'useHas': true,
-      'useStrict': isStrictFast,
-      'arrayBranch': { 'beforeLoop': '' },
-      'objectBranch': { 'beforeLoop': '' }
+      'useHas': true
     };
 
-    var object,
-        index = -1;
-
     // merge options into a template data object
-    while (object = arguments[++index]) {
-      for (var prop in object) {
-        var value = object[prop];
-        // keep this regexp explicit for the build pre-process
-        if (/beforeLoop|inLoop/.test(prop)) {
-          if (typeof value == 'string') {
-            value = { 'array': value, 'object': value };
-          }
-          data.arrayBranch[prop] = value.array;
-          data.objectBranch[prop] = value.object;
-        } else {
-          data[prop] = value;
-        }
+    for (var object, index = 0; object = arguments[index]; index++) {
+      for (var key in object) {
+        data[key] = object[key];
       }
     }
-    // set additional template `data` properties
     var args = data.args;
-    if ((data.firstArg = /^[^,]+/.exec(args)[0]) != 'collection' || !data.arrayBranch.inLoop) {
-      data.arrayBranch = null;
-    }
+    data.firstArg = /^[^,]+/.exec(args)[0];
+
     // create the function factory
     var factory = Function(
-        'bind, createCallback, forIn, hasOwnProperty, isArguments, isFunction, ' +
-        'objectTypes, nativeKeys, propertyIsEnumerable, stringClass, toString',
+        'createCallback, hasOwnProperty, isArguments, objectTypes, nativeKeys, ' +
+        'propertyIsEnumerable, stringClass, toString',
       'return function(' + args + ') {\n' + iteratorTemplate(data) + '\n}'
     );
     // return the compiled function
     return factory(
-      bind, createCallback, forIn, hasOwnProperty, isArguments, isFunction,
-      objectTypes, nativeKeys, propertyIsEnumerable, stringClass, toString
+      createCallback, hasOwnProperty, isArguments, objectTypes, nativeKeys,
+      propertyIsEnumerable, stringClass, toString
     );
   }
 
@@ -10244,6 +10192,32 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
   }
 
   /*--------------------------------------------------------------------------*/
+
+  /**
+   * Checks if `value` is an `arguments` object.
+   *
+   * @static
+   * @memberOf _
+   * @category Objects
+   * @param {Mixed} value The value to check.
+   * @returns {Boolean} Returns `true` if the `value` is an `arguments` object, else `false`.
+   * @example
+   *
+   * (function() { return _.isArguments(arguments); })(1, 2, 3);
+   * // => true
+   *
+   * _.isArguments([1, 2, 3]);
+   * // => false
+   */
+  function isArguments(value) {
+    return toString.call(value) == argsClass;
+  }
+  // fallback for browsers that can't detect `arguments` objects by [[Class]]
+  if (noArgsClass) {
+    isArguments = function(value) {
+      return value ? hasOwnProperty.call(value, 'callee') : false;
+    };
+  }
 
   /**
    * Iterates over `object`'s own and inherited enumerable properties, executing
@@ -10300,111 +10274,6 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
   var forOwn = createIterator(forEachIteratorOptions, forOwnIteratorOptions);
 
   /**
-   * Checks if `value` is an `arguments` object.
-   *
-   * @static
-   * @memberOf _
-   * @category Objects
-   * @param {Mixed} value The value to check.
-   * @returns {Boolean} Returns `true` if the `value` is an `arguments` object, else `false`.
-   * @example
-   *
-   * (function() { return _.isArguments(arguments); })(1, 2, 3);
-   * // => true
-   *
-   * _.isArguments([1, 2, 3]);
-   * // => false
-   */
-  function isArguments(value) {
-    return toString.call(value) == argsClass;
-  }
-  // fallback for browsers that can't detect `arguments` objects by [[Class]]
-  if (noArgsClass) {
-    isArguments = function(value) {
-      return value ? hasOwnProperty.call(value, 'callee') : false;
-    };
-  }
-
-  /**
-   * Checks if `value` is an array.
-   *
-   * @static
-   * @memberOf _
-   * @category Objects
-   * @param {Mixed} value The value to check.
-   * @returns {Boolean} Returns `true` if the `value` is an array, else `false`.
-   * @example
-   *
-   * (function() { return _.isArray(arguments); })();
-   * // => false
-   *
-   * _.isArray([1, 2, 3]);
-   * // => true
-   */
-  var isArray = nativeIsArray || function(value) {
-    return toString.call(value) == arrayClass;
-  };
-
-  /**
-   * Checks if `value` is a function.
-   *
-   * @static
-   * @memberOf _
-   * @category Objects
-   * @param {Mixed} value The value to check.
-   * @returns {Boolean} Returns `true` if the `value` is a function, else `false`.
-   * @example
-   *
-   * _.isFunction(_);
-   * // => true
-   */
-  function isFunction(value) {
-    return typeof value == 'function';
-  }
-  // fallback for older versions of Chrome and Safari
-  if (isFunction(/x/)) {
-    isFunction = function(value) {
-      return toString.call(value) == funcClass;
-    };
-  }
-
-  /**
-   * Checks if a given `value` is an object created by the `Object` constructor.
-   *
-   * @static
-   * @memberOf _
-   * @category Objects
-   * @param {Mixed} value The value to check.
-   * @returns {Boolean} Returns `true` if `value` is a plain object, else `false`.
-   * @example
-   *
-   * function Stooge(name, age) {
-   *   this.name = name;
-   *   this.age = age;
-   * }
-   *
-   * _.isPlainObject(new Stooge('moe', 40));
-   * // => false
-   *
-   * _.isPlainObject([1, 2, 3]);
-   * // => false
-   *
-   * _.isPlainObject({ 'name': 'moe', 'age': 40 });
-   * // => true
-   */
-  var isPlainObject = !getPrototypeOf ? isPlainFallback : function(value) {
-    if (!(value && typeof value == 'object')) {
-      return false;
-    }
-    var valueOf = value.valueOf,
-        objProto = typeof valueOf == 'function' && (objProto = getPrototypeOf(valueOf)) && getPrototypeOf(objProto);
-
-    return objProto
-      ? value == objProto || (getPrototypeOf(value) == objProto && !isArguments(value))
-      : isPlainFallback(value);
-  };
-
-  /**
    * A fallback implementation of `isPlainObject` that checks if a given `value`
    * is an object created by the `Object` constructor, assuming objects created
    * by the `Object` constructor have no inherited enumerable properties and that
@@ -10414,7 +10283,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * @param {Mixed} value The value to check.
    * @returns {Boolean} Returns `true` if `value` is a plain object, else `false`.
    */
-  function isPlainFallback(value) {
+  function shimIsPlainObject(value) {
     // avoid non-objects and false positives for `arguments` objects
     var result = false;
     if (!(value && typeof value == 'object') || isArguments(value)) {
@@ -10448,8 +10317,8 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
   }
 
   /**
-   * A shim implementation of `Object.keys` that produces an array of the given
-   * object's own enumerable property names.
+   * A fallback implementation of `Object.keys` that produces an array of the
+   * given object's own enumerable property names.
    *
    * @private
    * @param {Object} object The object to inspect.
@@ -10604,7 +10473,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * // => { 'flavor': 'chocolate', 'sprinkles': 'rainbow' }
    */
   var defaults = createIterator(extendIteratorOptions, {
-    'inLoop': 'if (result[index] == null) ' + extendIteratorOptions.inLoop
+    'objectLoop': 'if (result[index] == null) ' + extendIteratorOptions.objectLoop
   });
 
   /**
@@ -10691,6 +10560,26 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
   }
 
   /**
+   * Checks if `value` is an array.
+   *
+   * @static
+   * @memberOf _
+   * @category Objects
+   * @param {Mixed} value The value to check.
+   * @returns {Boolean} Returns `true` if the `value` is an array, else `false`.
+   * @example
+   *
+   * (function() { return _.isArray(arguments); })();
+   * // => false
+   *
+   * _.isArray([1, 2, 3]);
+   * // => true
+   */
+  var isArray = nativeIsArray || function(value) {
+    return toString.call(value) == arrayClass;
+  };
+
+  /**
    * Checks if `value` is a boolean (`true` or `false`) value.
    *
    * @static
@@ -10772,7 +10661,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
 
     if ((className == arrayClass || className == stringClass ||
         className == argsClass || (noArgsClass && isArguments(value))) ||
-        (className == objectClass && length === +length && isFunction(value.splice))) {
+        (className == objectClass && typeof length == 'number' && isFunction(value.splice))) {
       return !length;
     }
     forOwn(value, function() {
@@ -10904,22 +10793,22 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
       return result;
     }
     // deep compare objects
-    for (var prop in a) {
-      if (hasOwnProperty.call(a, prop)) {
+    for (var key in a) {
+      if (hasOwnProperty.call(a, key)) {
         // count the number of properties.
         size++;
         // deep compare each property value.
-        if (!(hasOwnProperty.call(b, prop) && isEqual(a[prop], b[prop], stackA, stackB))) {
+        if (!(hasOwnProperty.call(b, key) && isEqual(a[key], b[key], stackA, stackB))) {
           return false;
         }
       }
     }
     // ensure both objects have the same number of properties
-    for (prop in b) {
+    for (key in b) {
       // The JS engine in Adobe products, like InDesign, has a bug that causes
       // `!size--` to throw an error so it must be wrapped in parentheses.
       // https://github.com/documentcloud/underscore/issues/355
-      if (hasOwnProperty.call(b, prop) && !(size--)) {
+      if (hasOwnProperty.call(b, key) && !(size--)) {
         // `size` will be `-1` if `b` has more properties than `a`
         return false;
       }
@@ -10927,9 +10816,9 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
     // handle JScript [[DontEnum]] bug
     if (hasDontEnumBug) {
       while (++index < 7) {
-        prop = shadowed[index];
-        if (hasOwnProperty.call(a, prop) &&
-            !(hasOwnProperty.call(b, prop) && isEqual(a[prop], b[prop], stackA, stackB))) {
+        key = shadowed[index];
+        if (hasOwnProperty.call(a, key) &&
+            !(hasOwnProperty.call(b, key) && isEqual(a[key], b[key], stackA, stackB))) {
           return false;
         }
       }
@@ -10938,10 +10827,10 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
   }
 
   /**
-   * Checks if `value` is a finite number.
+   * Checks if `value` is, or can be coerced to, a finite number.
    *
    * Note: This is not the same as native `isFinite`, which will return true for
-   * booleans and other values. See http://es5.github.com/#x15.1.2.5.
+   * booleans and empty strings. See http://es5.github.com/#x15.1.2.5.
    *
    * @deprecated
    * @static
@@ -10955,13 +10844,42 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * // => true
    *
    * _.isFinite('10');
+   * // => true
+   *
+   * _.isFinite(true);
+   * // => false
+   *
+   * _.isFinite('');
    * // => false
    *
    * _.isFinite(Infinity);
    * // => false
    */
   function isFinite(value) {
-    return nativeIsFinite(value) && toString.call(value) == numberClass;
+    return nativeIsFinite(value) && !nativeIsNaN(parseFloat(value));
+  }
+
+  /**
+   * Checks if `value` is a function.
+   *
+   * @static
+   * @memberOf _
+   * @category Objects
+   * @param {Mixed} value The value to check.
+   * @returns {Boolean} Returns `true` if the `value` is a function, else `false`.
+   * @example
+   *
+   * _.isFunction(_);
+   * // => true
+   */
+  function isFunction(value) {
+    return typeof value == 'function';
+  }
+  // fallback for older versions of Chrome and Safari
+  if (isFunction(/x/)) {
+    isFunction = function(value) {
+      return toString.call(value) == funcClass;
+    };
   }
 
   /**
@@ -11061,6 +10979,42 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
   function isNumber(value) {
     return toString.call(value) == numberClass;
   }
+
+  /**
+   * Checks if a given `value` is an object created by the `Object` constructor.
+   *
+   * @static
+   * @memberOf _
+   * @category Objects
+   * @param {Mixed} value The value to check.
+   * @returns {Boolean} Returns `true` if `value` is a plain object, else `false`.
+   * @example
+   *
+   * function Stooge(name, age) {
+   *   this.name = name;
+   *   this.age = age;
+   * }
+   *
+   * _.isPlainObject(new Stooge('moe', 40));
+   * // => false
+   *
+   * _.isPlainObject([1, 2, 3]);
+   * // => false
+   *
+   * _.isPlainObject({ 'name': 'moe', 'age': 40 });
+   * // => true
+   */
+  var isPlainObject = !getPrototypeOf ? shimIsPlainObject : function(value) {
+    if (!(value && typeof value == 'object')) {
+      return false;
+    }
+    var valueOf = value.valueOf,
+        objProto = typeof valueOf == 'function' && (objProto = getPrototypeOf(valueOf)) && getPrototypeOf(objProto);
+
+    return objProto
+      ? value == objProto || (getPrototypeOf(value) == objProto && !isArguments(value))
+      : shimIsPlainObject(value);
+  };
 
   /**
    * Checks if `value` is a regular expression.
@@ -11177,7 +11131,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
         stackA = args[3],
         stackB = args[4];
 
-    if (indicator != compareAscending) {
+    if (indicator !== indicatorObject) {
       stackA = [];
       stackB = [];
       length = args.length;
@@ -11205,7 +11159,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
               : (isPlainObject(value) ? value : {})
             );
             // recursively merge objects and arrays (susceptible to call stack limits)
-            object[key] = merge(value, source, compareAscending, stackA, stackB);
+            object[key] = merge(value, source, indicatorObject, stackA, stackB);
           }
         } else if (source != null) {
           object[key] = source;
@@ -11247,7 +11201,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
     if (isFunc) {
       callback = createCallback(callback, thisArg);
     } else {
-      var props = concat.apply(ArrayProto, arguments);
+      var props = concat.apply(arrayRef, arguments);
     }
     forIn(object, function(value, key, object) {
       if (isFunc
@@ -11311,13 +11265,13 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
     var result = {};
     if (typeof callback != 'function') {
       var index = 0,
-          props = concat.apply(ArrayProto, arguments),
+          props = concat.apply(arrayRef, arguments),
           length = props.length;
 
       while (++index < length) {
-        var prop = props[index];
-        if (prop in object) {
-          result[prop] = object[prop];
+        var key = props[index];
+        if (key in object) {
+          result[key] = object[key];
         }
       }
     } else {
@@ -11378,7 +11332,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    */
   function contains(collection, target) {
     var length = collection ? collection.length : 0;
-    if (length === +length) {
+    if (typeof length == 'number') {
       return (toString.call(collection) == stringClass
         ? collection.indexOf(target)
         : indexOf(collection, target)
@@ -11444,7 +11398,14 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * _.every([true, 1, null, 'yes'], Boolean);
    * // => false
    */
-  var every = createIterator(forEachIteratorOptions, everyIteratorOptions);
+  function every(collection, callback, thisArg) {
+    var result = true;
+    callback = createCallback(callback, thisArg);
+    forEach(collection, function(value, index, collection) {
+      return (result = !!callback(value, index, collection));
+    });
+    return result;
+  }
 
   /**
    * Examines each element in a `collection`, returning an array of all elements
@@ -11464,10 +11425,16 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * var evens = _.filter([1, 2, 3, 4, 5, 6], function(num) { return num % 2 == 0; });
    * // => [2, 4, 6]
    */
-  var filter = createIterator(forEachIteratorOptions, {
-    'init': '[]',
-    'inLoop': 'callback(value, index, collection) && result.push(value)'
-  });
+  function filter(collection, callback, thisArg) {
+    var result = [];
+    callback = createCallback(callback, thisArg);
+    forEach(collection, function(value, index, collection) {
+      if (callback(value, index, collection)) {
+        result.push(value);
+      }
+    });
+    return result;
+  }
 
   /**
    * Examines each element in a `collection`, returning the first one the `callback`
@@ -11527,7 +11494,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * `collection` through a `callback`. The corresponding value of each key is an
    * array of elements passed to `callback` that returned the key. The `callback`
    * is bound to `thisArg` and invoked with three arguments; (value, index|key, collection).
-   * The `callback` argument may also be the name of a property to count by (e.g. 'length').
+   * The `callback` argument may also be the name of a property to group by (e.g. 'length').
    *
    * @static
    * @memberOf _
@@ -11612,17 +11579,23 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * _.map({ 'one': 1, 'two': 2, 'three': 3 }, function(num) { return num * 3; });
    * // => [3, 6, 9] (order is not guaranteed)
    */
-  var map = createIterator(forEachIteratorOptions, {
-    'init': 'collection || []',
-    'beforeLoop': {
-      'array':  'result = Array(length)',
-      'object': 'result = ' + (isKeysFast ? 'Array(length)' : '[]')
-    },
-    'inLoop': {
-      'array':  'result[index] = callback(value, index, collection)',
-      'object': 'result' + (isKeysFast ? '[ownIndex] = ' : '.push') + '(callback(value, index, collection))'
+  function map(collection, callback, thisArg) {
+    var index = -1,
+        length = collection ? collection.length : 0,
+        result = Array(typeof length == 'number' ? length : 0);
+
+    callback = createCallback(callback, thisArg);
+    if (isArray(collection)) {
+      while (++index < length) {
+        result[index] = callback(collection[index], index, collection);
+      }
+    } else {
+      forEach(collection, function(value, key, collection) {
+        result[++index] = callback(value, key, collection);
+      });
     }
-  });
+    return result;
+  }
 
   /**
    * Retrieves the maximum value of an `array`. If `callback` is passed,
@@ -11633,7 +11606,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * @static
    * @memberOf _
    * @category Collections
-   * @param {Array} collection The collection to iterate over.
+   * @param {Array|Object|String} collection The collection to iterate over.
    * @param {Function} [callback] The function called per iteration.
    * @param {Mixed} [thisArg] The `this` binding of `callback`.
    * @returns {Mixed} Returns the maximum value.
@@ -11654,7 +11627,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
         length = collection ? collection.length : 0,
         result = computed;
 
-    if (callback || length !== +length) {
+    if (callback || typeof length != 'number') {
       callback = createCallback(callback, thisArg);
       forEach(collection, function(value, index, collection) {
         var current = callback(value, index, collection);
@@ -11682,7 +11655,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * @static
    * @memberOf _
    * @category Collections
-   * @param {Array} collection The collection to iterate over.
+   * @param {Array|Object|String} collection The collection to iterate over.
    * @param {Function} [callback] The function called per iteration.
    * @param {Mixed} [thisArg] The `this` binding of `callback`.
    * @returns {Mixed} Returns the minimum value.
@@ -11697,7 +11670,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
         length = collection ? collection.length : 0,
         result = computed;
 
-    if (callback || length !== +length) {
+    if (callback || typeof length != 'number') {
       callback = createCallback(callback, thisArg);
       forEach(collection, function(value, index, collection) {
         var current = callback(value, index, collection);
@@ -11799,17 +11772,17 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
         length = collection ? collection.length : 0,
         noaccum = arguments.length < 3;
 
-    if (length !== +length) {
+    if (typeof length != 'number') {
       var props = keys(collection);
       length = props.length;
     } else if (noCharByIndex && toString.call(collection) == stringClass) {
       iteratee = collection.split('');
     }
-    forEach(collection, function(value, index, object) {
+    forEach(collection, function(value, index, collection) {
       index = props ? props[--length] : --length;
       accumulator = noaccum
         ? (noaccum = false, iteratee[index])
-        : callback.call(thisArg, accumulator, iteratee[index], index, object);
+        : callback.call(thisArg, accumulator, iteratee[index], index, collection);
     });
     return accumulator;
   }
@@ -11845,7 +11818,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * @static
    * @memberOf _
    * @category Collections
-   * @param {Array} collection The collection to shuffle.
+   * @param {Array|Object|String} collection The collection to shuffle.
    * @returns {Array} Returns a new shuffled collection.
    * @example
    *
@@ -11886,7 +11859,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    */
   function size(collection) {
     var length = collection ? collection.length : 0;
-    return length === +length ? length : keys(collection).length;
+    return typeof length == 'number' ? length : keys(collection).length;
   }
 
   /**
@@ -11909,10 +11882,14 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * _.some([null, 0, 'yes', false]);
    * // => true
    */
-  var some = createIterator(forEachIteratorOptions, everyIteratorOptions, {
-    'init': 'false',
-    'inLoop': everyIteratorOptions.inLoop.replace('!', '')
-  });
+  function some(collection, callback, thisArg) {
+    var result;
+    callback = createCallback(callback, thisArg);
+    forEach(collection, function(value, index, collection) {
+      return !(result = callback(value, index, collection));
+    });
+    return !!result;
+  }
 
   /**
    * Creates an array, stable sorted in ascending order by the results of
@@ -11972,11 +11949,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * // => [2, 3, 4]
    */
   function toArray(collection) {
-    if (!collection) {
-      return [];
-    }
-    var length = collection.length;
-    if (length === +length) {
+    if (collection && typeof collection.length == 'number') {
       return (noArraySliceOnStrings ? toString.call(collection) == stringClass : typeof collection == 'string')
         ? collection.split('')
         : slice.call(collection);
@@ -12007,25 +11980,19 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    */
   function where(collection, properties) {
     var props = [];
-    forIn(properties, function(value, prop) { props.push(prop); });
-
-    var length = props.length,
-        result = [];
-
-    forEach(collection, function(value) {
-      var index = -1, passed = true;
-      while (++index < length) {
-        var prop = props[index],
-            pass = value[prop] === properties[prop];
-        if (!pass) {
+    forIn(properties, function(value, prop) {
+      props.push(prop);
+    });
+    return filter(collection, function(object) {
+      var length = props.length;
+      while (length--) {
+        var result = object[props[length]] === properties[props[length]];
+        if (!result) {
           break;
         }
       }
-      if (pass) {
-        result.push(value);
-      }
+      return !!result;
     });
-    return result;
   }
 
   /*--------------------------------------------------------------------------*/
@@ -12075,14 +12042,11 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * // => [1, 3, 4]
    */
   function difference(array) {
-    var result = [];
-    if (!array) {
-      return result;
-    }
     var index = -1,
-        length = array.length,
-        flattened = concat.apply(ArrayProto, arguments),
-        contains = cachedContains(flattened, length);
+        length = array ? array.length : 0,
+        flattened = concat.apply(arrayRef, arguments),
+        contains = cachedContains(flattened, length),
+        result = [];
 
     while (++index < length) {
       var value = array[index];
@@ -12235,23 +12199,22 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * // => [1, 2]
    */
   function intersection(array) {
-    var argsLength = arguments.length,
-        cache = [],
-        index = -1,
-        length = array ? array.length : 0,
+    var args = arguments,
+        argsLength = args.length,
+        cache = {},
         result = [];
 
-    array: while (++index < length) {
-      var value = array[index];
+    forEach(array, function(value) {
       if (indexOf(result, value) < 0) {
-        for (var argsIndex = 1; argsIndex < argsLength; argsIndex++) {
-          if (!(cache[argsIndex] || (cache[argsIndex] = cachedContains(arguments[argsIndex])))(value)) {
-            continue array;
+        var length = argsLength;
+        while (--length) {
+          if (!(cache[length] || (cache[length] = cachedContains(args[length])))(value)) {
+            return;
           }
         }
         result.push(value);
       }
-    }
+    });
     return result;
   }
 
@@ -12463,18 +12426,14 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
     var low = 0,
         high = array ? array.length : low;
 
-    if (callback) {
-      callback = createCallback(callback, thisArg);
-      value = callback(value);
-      while (low < high) {
-        var mid = (low + high) >>> 1;
-        callback(array[mid]) < value ? low = mid + 1 : high = mid;
-      }
-    } else {
-      while (low < high) {
-        var mid = (low + high) >>> 1;
-        array[mid] < value ? low = mid + 1 : high = mid;
-      }
+    // explicitly reference `identity` for better engine inlining
+    callback = callback ? createCallback(callback, thisArg) : identity;
+    value = callback(value);
+    while (low < high) {
+      var mid = (low + high) >>> 1;
+      callback(array[mid]) < value
+        ? low = mid + 1
+        : high = mid;
     }
     return low;
   }
@@ -12495,18 +12454,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * // => [1, 2, 3, 101, 10]
    */
   function union() {
-    var index = -1,
-        flattened = concat.apply(ArrayProto, arguments),
-        length = flattened.length,
-        result = [];
-
-    while (++index < length) {
-      var value = flattened[index];
-      if (indexOf(result, value) < 0) {
-        result.push(value);
-      }
-    }
-    return result;
+    return uniq(concat.apply(arrayRef, arguments));
   }
 
   /**
@@ -12543,7 +12491,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
     var index = -1,
         length = array ? array.length : 0,
         result = [],
-        seen = [];
+        seen = result;
 
     // juggle arguments
     if (typeof isSorted == 'function') {
@@ -12551,15 +12499,22 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
       callback = isSorted;
       isSorted = false;
     }
-    callback = createCallback(callback, thisArg);
+    if (callback) {
+      seen = [];
+      callback = createCallback(callback, thisArg);
+    }
     while (++index < length) {
-      var computed = callback(array[index], index, array);
+      var value = array[index],
+          computed = callback ? callback(value, index, array) : value;
+
       if (isSorted
             ? !index || seen[seen.length - 1] !== computed
             : indexOf(seen, computed) < 0
           ) {
-        seen.push(computed);
-        result.push(array[index]);
+        if (callback) {
+          seen.push(computed);
+        }
+        result.push(value);
       }
     }
     return result;
@@ -12706,21 +12661,17 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * jQuery('#lodash_button').on('click', buttonView.onClick);
    * // => When the button is clicked, `this.label` will have the correct value
    */
-  var bindAll = createIterator(extendIteratorOptions, {
-    'top':
-      'var funcs = arguments,\n' +
-      '    length = funcs.length;\n' +
-      'if (length > 1) {\n' +
-      '  while (--length) {\n' +
-      '    index = funcs[length];\n' +
-      '    result[index] = bind(result[index], result)\n' +
-      '  }\n' +
-      '  return result\n' +
-      '}',
-    'inLoop':
-      'if (isFunction(value)) result[index] = bind(value, result)',
-    'bottom': false
-  });
+  function bindAll(object) {
+    var funcs = arguments,
+        index = funcs.length > 1 ? 0 : (funcs = functions(object), -1),
+        length = funcs.length;
+
+    while (++index < length) {
+      var key = funcs[index];
+      object[key] = bind(object[key], object);
+    }
+    return object;
+  }
 
   /**
    * Creates a function that is the composition of the passed functions,
@@ -12785,7 +12736,6 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
         result = func.apply(thisArg, args);
       }
     }
-
     return function() {
       var isImmediate = immediate && !timeoutId;
       args = arguments;
@@ -12820,7 +12770,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    */
   function delay(func, wait) {
     var args = slice.call(arguments, 2);
-    return setTimeout(function() { return func.apply(undefined, args); }, wait);
+    return setTimeout(function() { func.apply(undefined, args); }, wait);
   }
 
   /**
@@ -12840,7 +12790,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    */
   function defer(func) {
     var args = slice.call(arguments, 1);
-    return setTimeout(function() { return func.apply(undefined, args); }, 1);
+    return setTimeout(function() { func.apply(undefined, args); }, 1);
   }
 
   /**
@@ -12901,10 +12851,10 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
   function memoize(func, resolver) {
     var cache = {};
     return function() {
-      var prop = resolver ? resolver.apply(this, arguments) : arguments[0];
-      return hasOwnProperty.call(cache, prop)
-        ? cache[prop]
-        : (cache[prop] = func.apply(this, arguments));
+      var key = resolver ? resolver.apply(this, arguments) : arguments[0];
+      return hasOwnProperty.call(cache, key)
+        ? cache[key]
+        : (cache[key] = func.apply(this, arguments));
     };
   }
 
@@ -12993,7 +12943,6 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
       timeoutId = null;
       result = func.apply(thisArg, args);
     }
-
     return function() {
       var now = new Date,
           remaining = wait - (now - lastCalled);
@@ -13026,19 +12975,17 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * @returns {Function} Returns the new function.
    * @example
    *
-   * var hello = function(name) { return 'hello: ' + name; };
+   * var hello = function(name) { return 'hello ' + name; };
    * hello = _.wrap(hello, function(func) {
    *   return 'before, ' + func('moe') + ', after';
    * });
    * hello();
-   * // => 'before, hello: moe, after'
+   * // => 'before, hello moe, after'
    */
   function wrap(value, wrapper) {
     return function() {
       var args = [value];
-      if (arguments.length) {
-        push.apply(args, arguments);
-      }
+      push.apply(args, arguments);
       return wrapper.apply(this, args);
     };
   }
@@ -13111,9 +13058,8 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
 
       lodash.prototype[methodName] = function() {
         var args = [this.__wrapped__];
-        if (arguments.length) {
-          push.apply(args, arguments);
-        }
+        push.apply(args, arguments);
+
         var result = func.apply(lodash, args);
         if (this.__chain__) {
           result = new lodash(result);
@@ -13222,6 +13168,12 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * @param {String} text The template text.
    * @param {Obect} data The data object used to populate the text.
    * @param {Object} options The options object.
+   *  escape - The "escape" delimiter regexp.
+   *  evaluate - The "evaluate" delimiter regexp.
+   *  interpolate - The "interpolate" delimiter regexp.
+   *  sourceURL - The sourceURL of the template's compiled source.
+   *  variable - The data object variable name.
+   *
    * @returns {Function|String} Returns a compiled function when no `data` object
    *  is given, else it returns the interpolated text.
    * @example
@@ -13243,13 +13195,18 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * _.template('<% print("hello " + epithet); %>!', { 'epithet': 'stooge' });
    * // => 'hello stooge!'
    *
-   * // using custom template delimiter settings
+   * // using custom template delimiters
    * _.templateSettings = {
    *   'interpolate': /\{\{([\s\S]+?)\}\}/g
    * };
    *
    * _.template('hello {{ name }}!', { 'name': 'mustache' });
    * // => 'hello mustache!'
+   *
+   * // using the `sourceURL` option to specify a custom sourceURL for the template
+   * var compiled = _.template('hello <%= name %>', null, { 'sourceURL': '/basic/greeting.jst' });
+   * compiled(data);
+   * // => find the source of "greeting.jst" under the Sources tab or Resources panel of the web inspector
    *
    * // using the `variable` option to ensure a with-statement isn't used in the compiled template
    * var compiled = _.template('hello <%= data.name %>!', null, { 'variable': 'data' });
@@ -13259,11 +13216,6 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    *   __p += 'hello ' + ((__t = ( data.name )) == null ? '' : __t) + '!';
    *   return __p;
    * }
-   *
-   * // using the `sourceURL` option to specify a custom sourceURL for the template
-   * var compiled = _.template('hello <%= name %>', null, { 'sourceURL': '/basic/greeting.jst' });
-   * compiled(data);
-   * // => find the source of "greeting.jst" under the sources tab or resources panel of the web inspector
    *
    * // using the `source` property to inline compiled templates for meaningful
    * // line numbers in error messages and a stack trace
@@ -13404,8 +13356,9 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
   }
 
   /**
-   * Converts the HTML entities `&amp;`, `&lt;`, `&gt;`, `&quot;`, and `&#x27;`
-   * in `string` to their corresponding characters.
+   * The opposite of `_.escape`, this method converts the HTML entities
+   * `&amp;`, `&lt;`, `&gt;`, `&quot;`, and `&#x27;` in `string` to their
+   * corresponding characters.
    *
    * @static
    * @memberOf _
@@ -13540,7 +13493,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
    * @memberOf _
    * @type String
    */
-  lodash.VERSION = '0.8.2';
+  lodash.VERSION = '0.9.1';
 
   // assign static methods
   lodash.after = after;
@@ -13656,9 +13609,8 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
   lodash.take = first;
   lodash.unique = uniq;
 
-  // add pseudo private properties used and removed during the build process
+  // add pseudo private property to be used and removed during the build process
   lodash._iteratorTemplate = iteratorTemplate;
-  lodash._shimKeys = shimKeys;
 
   /*--------------------------------------------------------------------------*/
 
@@ -13672,7 +13624,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
 
   // add all mutator Array functions to the wrapper.
   forEach(['pop', 'push', 'reverse', 'shift', 'sort', 'splice', 'unshift'], function(methodName) {
-    var func = ArrayProto[methodName];
+    var func = arrayRef[methodName];
 
     lodash.prototype[methodName] = function() {
       var value = this.__wrapped__;
@@ -13693,7 +13645,7 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
 
   // add all accessor Array functions to the wrapper.
   forEach(['concat', 'join', 'slice'], function(methodName) {
-    var func = ArrayProto[methodName];
+    var func = arrayRef[methodName];
 
     lodash.prototype[methodName] = function() {
       var value = this.__wrapped__,
