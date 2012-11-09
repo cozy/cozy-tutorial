@@ -368,6 +368,10 @@ window.require.define({"models/bookmark": function(exports, require, module) {
 
     Bookmark.prototype.url = 'bookmarks';
 
+    Bookmark.prototype.initialize = function() {
+      return this.url += "/" + this.id;
+    };
+
     Bookmark.prototype.isNew = function() {
       return !(this.id != null);
     };
@@ -493,6 +497,10 @@ window.require.define({"views/bookmark_view": function(exports, require, module)
 
     BookmarkView.prototype.tagName = 'div';
 
+    BookmarkView.prototype.events = {
+      'click .delete-button': 'onDeleteClicked'
+    };
+
     function BookmarkView(model) {
       this.model = model;
       BookmarkView.__super__.constructor.call(this);
@@ -502,6 +510,20 @@ window.require.define({"views/bookmark_view": function(exports, require, module)
       var template;
       template = require('./templates/bookmark');
       return template(this.getRenderData());
+    };
+
+    BookmarkView.prototype.onDeleteClicked = function() {
+      var _this = this;
+      this.$('.delete-button').html("deleting...");
+      return this.model.destroy({
+        success: function() {
+          return _this.destroy();
+        },
+        error: function() {
+          alert("Server error occured, bookmark was not deleted.");
+          return _this.$('.delete-button').html("delete");
+        }
+      });
     };
 
     return BookmarkView;
@@ -551,7 +573,7 @@ window.require.define({"views/templates/bookmark": function(exports, require, mo
   var interp;
   buf.push('<div class="title">' + escape((interp = model.title) == null ? '' : interp) + '</div><div class="url"> <a');
   buf.push(attrs({ 'href':("" + (model.url) + "") }, {"href":true}));
-  buf.push('>' + escape((interp = model.url) == null ? '' : interp) + '</a></div>');
+  buf.push('>' + escape((interp = model.url) == null ? '' : interp) + '</a></div><button class="delete-button">delete</button>');
   }
   return buf.join("");
   };
