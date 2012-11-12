@@ -6,6 +6,15 @@ Store all your bookmarks here !
 
 Source code for Make Your Own App tutorial.
 
+# Start
+
+Clone this repository, install dependencies and run server (it requires Node.js
+and Coffee-script)
+    
+    git clone git://github.com/mycozycloud/cozy-tutorial.git
+    cd cozy-tutorial
+    npm install
+    coffee server
 
 # About Cozy
 
