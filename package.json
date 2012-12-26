@@ -8,6 +8,7 @@
   , "url": "https://github.com/mycozycloud/cozy-template.git"
   }
 , "main": "server.coffee"
+, "license": "MIT"
 , "dependencies":
   { "jade":             "= 0.27.6"
   , "jade-ext":         "= 0.0.5"
