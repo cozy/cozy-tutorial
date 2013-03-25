@@ -1,9 +1,8 @@
 module.exports = class Bookmark extends Backbone.Model
 
-    url: 'bookmarks'
-
     initialize: ->
-        @url += "/#{@id}"
+        unless @isNew
+            @url += "/#{@id}"
 
     isNew: () ->
         not @id?
