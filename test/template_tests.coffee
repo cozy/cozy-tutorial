@@ -1,23 +1,20 @@
-should = require('should')
-async = require('async')
-Client = require('../common/test/client').Client
-app = require('../server')
+should = require('chai').Should()
+Client = require('request-json').JsonClient
 
+client = new Client "http://localhost:8888/"
 
-client = new Client("http://localhost:8888/")
-
+instantiateApp = require '../server'
+app = instantiateApp()
 
 describe "Test section", ->
 
     before (done) ->
-        app.listen(8888)
+        app.listen 8888
         done()
 
     after (done) ->
-        app.close()
+        app.compound.server.close()
         done()
 
-    describe "My test", ->
-        it "When I run a test, it succeeds", (done) ->
-            should.exist "my testi"
-            done()
+    it "Then it succeeds", ->
+        "ok".should.equal "ok"
