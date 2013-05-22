@@ -1,71 +1,82 @@
-View = require './view'
+BaseView = require 'lib/base_view'
 
-class ViewCollection extends View
-    collection: new Backbone.Collection()
+# View that display a collection of subitems
+# used to DRY views
+# Usage : new ViewCollection(collection:collection)
+# Automatically populate itself by creating a itemView for each item
+# in its collection
 
-    view: new View()
+# can use a template that will be displayed alongside the itemViews
 
-    views: []
+# itemView       : the Backbone.View to be used for items
+# itemViewOptions : the options that will be passed to itemViews
+# collectionEl : the DOM element's selector where the itemViews will
+#                be displayed. Automatically falls back to el if null
 
-    length: ->
-        @views.length
+module.exports = class ViewCollection extends BaseView
 
-    add: (views, options = {}) ->
-        views = if _.isArray(views) then views.slice() else [views]
-        for view in views
-            unless @get view.cid
-                @views.push(view)
-                @trigger('add', view, @) unless options.silent
-        @
+    itemview: null
 
-    get: (cid) ->
-        @find((view) -> view.cid is cid) or null
+    views: {}
 
-    remove: (views, options = {}) ->
-        views = if _.isArray(views) then views.slice() else [views]
-        for view in views
-            @destroy(view)
-            @trigger('remove', view, @) unless options.silent
-        @
+    template: -> ''
 
-    destroy: (view = @, options = {}) ->
-        _views = @filter(_view) -> view.cid isnt _view.cid
-        @views = _views
-        view.undelegateEvents()
-        view.$el.removeData().unbind()
-        view.remove()
-        Backbone.View::remove.call view
-        @trigger('remove', view, @) unless options.silent
-        @
+    itemViewOptions: ->
 
-    reset: (views, options = {}) ->
-        views = if _.isArray(views) then views.slice() else [views]
-        @destroy(view, options) for view in @views
-        if views.length isnt 0
-            @add(view, options) for view in views
-            @trigger('reset', view, @) unless options.silent
-        @
+    collectionEl: null
 
-    renderOne: (model) =>
-        view = new @view model
-        @$el.append view.render().el
-        @add view
-        @
+    # add 'empty' class to view when there is no subview
+    onChange: ->
+        @$el.toggleClass 'empty', _.size(@views) is 0
 
-    renderAll: =>
-        @collection.each @renderOne
-        @
+    # can be overriden if we want to place the subviews somewhere else
+    appendView: (view) ->
+        @$collectionEl.append view.el
 
-# Underscore methods that we want to implement on the Collection.
-methods = ['forEach', 'each', 'map', 'reduce', 'reduceRight', 'find',
-    'detect', 'filter', 'select', 'reject', 'every', 'all', 'some', 'any',
-    'include', 'contains', 'invoke', 'max', 'min', 'sortBy', 'sortedIndex',
-    'toArray', 'size', 'first', 'initial', 'rest', 'last', 'without', 'indexOf',
-    'shuffle', 'lastIndexOf', 'isEmpty', 'groupBy']
+    # bind listeners to the collection
+    initialize: ->
+        super
+        @views = {}
+        @listenTo @collection, "reset",   @onReset
+        @listenTo @collection, "add",     @addItem
+        @listenTo @collection, "remove",  @removeItem
 
-# Mix in each Underscore method as a proxy to `ViewCollection#views`.
-_.each methods, (method) ->
-    ViewCollection::[method] = ->
-        _[method].apply _, [@views].concat(_.toArray(arguments))
+        if not @collectionEl?
+            collectionEl = el
 
-module.exports = ViewCollection
+    # if we have views before a render call, we detach them
+    render: ->
+        view.$el.detach() for id, view of @views
+        super
+
+    # after render, we reattach the views
+    afterRender: ->
+        @$collectionEl = $(@collectionEl)
+        @appendView view.$el for id, view of @views
+        @onReset @collection
+        @onChange @views
+
+    # destroy all sub views before remove
+    remove: ->
+        @onReset []
+        super
+
+    # event listener for reset
+    onReset: (newcollection) ->
+        view.remove() for id, view of @views
+        newcollection.forEach @addItem
+
+    # event listeners for add
+    addItem: (model) =>
+        options = _.extend {}, {model: model}, @itemViewOptions(model)
+        view = new @itemview(options)
+        @views[model.cid] = view.render()
+        @appendView view
+        @onChange @views
+
+    # event listeners for remove
+    removeItem: (model) =>
+        @views[model.cid].remove()
+        delete @views[model.cid]
+
+        @onChange @views
