@@ -1,7 +1,6 @@
 # This is where we import required modules
 ViewCollection = require '../lib/view_collection'
 BookmarkView  = require './bookmark_view'
-BookmarkCollection = require '../collections/bookmark_collection'
 
 module.exports = class BookmarksView extends ViewCollection
 
@@ -57,4 +56,3 @@ module.exports = class BookmarksView extends ViewCollection
                 error: -> alert "Server error occured, Bookmark was not saved"
           else
               alert 'Both fields are required'
-

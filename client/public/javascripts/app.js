@@ -365,28 +365,6 @@ window.require.register("router", function(exports, require, module) {
   })(Backbone.Router);
   
 });
-window.require.register("routers/app_router", function(exports, require, module) {
-  var AppRouter, _ref,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  module.exports = AppRouter = (function(_super) {
-    __extends(AppRouter, _super);
-
-    function AppRouter() {
-      _ref = AppRouter.__super__.constructor.apply(this, arguments);
-      return _ref;
-    }
-
-    AppRouter.prototype.routes = {
-      '': function() {}
-    };
-
-    return AppRouter;
-
-  })(Backbone.Router);
-  
-});
 window.require.register("views/bookmark_view", function(exports, require, module) {
   var BaseView, BookmarkView, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -428,7 +406,7 @@ window.require.register("views/bookmark_view", function(exports, require, module
   
 });
 window.require.register("views/bookmarks_view", function(exports, require, module) {
-  var BookmarkCollection, BookmarkView, BookmarksView, ViewCollection, _ref,
+  var BookmarkView, BookmarksView, ViewCollection, _ref,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -436,8 +414,6 @@ window.require.register("views/bookmarks_view", function(exports, require, modul
   ViewCollection = require('../lib/view_collection');
 
   BookmarkView = require('./bookmark_view');
-
-  BookmarkCollection = require('../collections/bookmark_collection');
 
   module.exports = BookmarksView = (function(_super) {
     __extends(BookmarksView, _super);

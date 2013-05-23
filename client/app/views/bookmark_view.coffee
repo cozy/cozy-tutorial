@@ -13,11 +13,11 @@ module.exports = class BookmarkView extends BaseView
 
     # Register event
     events:
-      'click .delete-button': 'onDeleteClicked'
+        'click .delete-button': 'onDeleteClicked'
 
     onDeleteClicked: ->
-      @$('.delete-button').html "deleting..."
-      @model.destroy
+        @$('.delete-button').html "deleting..."
+        @model.destroy
           error: ->
-              alert "Server error occured, bookmark was not deleted."
-              @$('.delete-button').html "delete"
+                alert "Server error occured, bookmark was not deleted."
+                @$('.delete-button').html "delete"
