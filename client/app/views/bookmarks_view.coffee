@@ -1,24 +1,24 @@
+# This is where we import required modules
 ViewCollection = require '../lib/view_collection'
 BookmarkView  = require './bookmark_view'
 BookmarkCollection = require '../collections/bookmark_collection'
 
 module.exports = class BookmarksView extends ViewCollection
 
+    # This is the template we wrote above
     template: require('./templates/home')
 
     # This is the class that will be used to create view needed to render models
     itemview: BookmarkView
 
-    # DOM selector to bind the related DOM element to the view
+    # Use a CSS selector to connect your view to a DOM element already rendered.
     el: 'body.application'
 
-    # Dom selector to bind the related DOM element
+    # DOM selector to connect the already rendered DOM element where you want to
+    # display the subviews. Not mandatory, default is 'el'
     collectionEl: '#bookmark-list'
 
-      # Register listener
-    events:
-        'click .create-button': 'onCreateClicked'
-
+    # After DOM elements have been created
     afterRender: ->
 
         # Must be called first
@@ -30,10 +30,10 @@ module.exports = class BookmarksView extends ViewCollection
         # Retrieves the data from the database
         @collection.fetch
             success: (collection, response, option) =>
-            	@$collectionEl.find('em').remove()
+                @$collectionEl.find('em').remove()
             error: =>
-            	msg = "Bookmarks couldn't be retrieved due to a server error."
-            	@$collectionEl.find('em').html msg
+                msg = "Bookmarks couldn't be retrieved due to a server error."
+                @$collectionEl.find('em').html msg
 
 
      onCreateClicked: =>

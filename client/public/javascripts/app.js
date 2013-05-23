@@ -455,10 +455,6 @@ window.require.register("views/bookmarks_view", function(exports, require, modul
 
     BookmarksView.prototype.collectionEl = '#bookmark-list';
 
-    BookmarksView.prototype.events = {
-      'click .create-button': 'onCreateClicked'
-    };
-
     BookmarksView.prototype.afterRender = function() {
       var _this = this;
 
