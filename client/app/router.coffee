@@ -1,6 +1,7 @@
 BookmarksView = require 'views/bookmarks_view'
 BookmarkCollection = require 'collections/bookmark_collection'
 
+# We'll cover the router in another tutorial.
 module.exports = class Router extends Backbone.Router
 
     routes:
