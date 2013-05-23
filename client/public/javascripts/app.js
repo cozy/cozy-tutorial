@@ -465,8 +465,14 @@ window.require.register("views/bookmarks_view", function(exports, require, modul
       BookmarksView.__super__.afterRender.call(this);
       this.$collectionEl.html('<em>loading...</em>');
       return this.collection.fetch({
-        success: function() {
+        success: function(collection, response, option) {
           return _this.$collectionEl.find('em').remove();
+        },
+        error: function() {
+          var msg;
+
+          msg = "Bookmarks couldn't be retrieved due to a server error.";
+          return _this.$collectionEl.find('em').html(msg);
         }
       });
     };
@@ -476,7 +482,6 @@ window.require.register("views/bookmarks_view", function(exports, require, modul
 
       title = $('.title-field').val();
       url = $('.url-field').val();
-      console.debug(title.length);
       if ((title != null ? title.length : void 0) > 0 && (url != null ? url.length : void 0) > 0) {
         bookmark = {
           title: title,

@@ -29,8 +29,11 @@ module.exports = class BookmarksView extends ViewCollection
 
         # Retrieves the data from the database
         @collection.fetch
-            success: =>
-                @$collectionEl.find('em').remove()
+            success: (collection, response, option) =>
+            	@$collectionEl.find('em').remove()
+            error: =>
+            	msg = "Bookmarks couldn't be retrieved due to a server error."
+            	@$collectionEl.find('em').html msg
 
 
      onCreateClicked: =>
@@ -39,7 +42,6 @@ module.exports = class BookmarksView extends ViewCollection
           url = $('.url-field').val()
 
           # Validate that data are ok.
-          console.debug title.length
           if title?.length > 0 and url?.length > 0
 
             bookmark =
