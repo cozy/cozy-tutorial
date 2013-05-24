@@ -12,9 +12,9 @@ action 'all', ->
     Bookmark.all (err, bookmarks) ->
         if err
             compound.logger.write err
-            send error: true, msg: "Server error occured while retrieving data."
+            send error: true, msg: "Server error occured while retrieving data.", 500
         else
-            send bookmarks
+            send bookmarks, 200
 
 action 'create', ->
     Bookmark.create req.body, (err, bookmark) =>
@@ -22,7 +22,7 @@ action 'create', ->
             compound.logger.write err
             send error: true, msg: "Server error while creating bookmark.", 500
         else
-            send bookmark
+            send bookmark, 200
 
 action 'destroy', ->
     @bookmark.destroy (err) ->
@@ -30,4 +30,4 @@ action 'destroy', ->
             compound.logger.write err
             send error: 'Cannot destroy bookmark', 500
         else
-            send success: 'Bookmark succesfuly deleted'
+            send success: 'Bookmark succesfuly deleted', 200
