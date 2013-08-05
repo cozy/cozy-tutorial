@@ -17,6 +17,9 @@ module.exports = class BookmarksView extends ViewCollection
     # display the subviews. Not mandatory, default is 'el'
     collectionEl: '#bookmark-list'
 
+    events:
+        'click .create-button': 'onCreateClicked'
+
     # After DOM elements have been created
     afterRender: ->
 
