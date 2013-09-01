@@ -1,8 +1,8 @@
-var Bookmark, americano;
+var Bookmark, db;
 
-americano = require('americano-cozy');
+db = require('./db');
 
-module.exports = Bookmark = americano.getModel('Bookmark', {
+module.exports = Bookmark = db.define('Bookmark', {
   url: String,
   title: String
 });
