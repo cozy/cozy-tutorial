@@ -15,33 +15,24 @@ app.configure(function() {
 });
 
 // Database initialization
-db.serialize(function() {
-    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='bookmarks'", function(err, row) {
-        if(err !== null) {
-            console.log(err);
-        }
-        else if(row == null) {
-            db.run('CREATE TABLE "bookmarks" ("title" VARCHAR(255), url VARCHAR(255))', function(err) {
-                if(err !== null) {
-                    console.log(err);
-                }
-                else {
-                    console.log("SQL Table 'bookmarks' initialized.");
-                }
-            });
-        }
-        else {
-            console.log("SQL Table 'bookmarks' already initialized.");
-            //db.run("DROP TABLE 'bookmarks'");
-        }
-    });
+db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='bookmarks'", function(err, row) {
+    if(err !== null) {
+        console.log(err);
+    }
+    else if(row == null) {
+        db.run('CREATE TABLE "bookmarks" ("id" INTEGER PRIMARY KEY AUTOINCREMENT, "title" VARCHAR(255), url VARCHAR(255))', function(err) {
+            if(err !== null) {
+                console.log(err);
+            }
+            else {
+                console.log("SQL Table 'bookmarks' initialized.");
+            }
+        });
+    }
+    else {
+        console.log("SQL Table 'bookmarks' already initialized.");
+    }
 });
-
-// Let's define some bookmarks
-var bookmarks = []
-bookmarks.push({title: "Cozycloud", url: "https://cozycloud.cc"});
-bookmarks.push({title: "Cozy.io", url: "http://cozy.io"});
-bookmarks.push({title: "My Cozy", url: "http://localhost:9104/"});
 
 // We render the templates with the data
 app.get('/', function(req, res) {
@@ -51,34 +42,38 @@ app.get('/', function(req, res) {
             res.send(500, "An error has occurred -- " + err);
         }
         else {
-            params = {
-                "bookmarks": row
-            }
-            res.render('index.jade', params, function(err, html) {
+            res.render('index.jade', {bookmarks: row}, function(err, html) {
                 res.send(200, html);
             });
         }
     });
-
 });
 
 // We define a new route that will handle bookmark creation
 app.post('/add', function(req, res) {
-    //bookmarks.push(req.body);
-    db.run("INSERT INTO 'bookmarks' VALUES('" + body.title + "', '" + body.url + "')", function(err) {
+    title = req.body.title;
+    url = req.body.url;
+    sqlRequest = "INSERT INTO 'bookmarks' (title, url) VALUES('" + title + "', '" + url + "')"
+    db.run(sqlRequest, function(err) {
         if(err !== null) {
             res.send(500, "An error has occurred -- " + err);
         }
         else {
-            res.redirect('/');
+            res.redirect('back');
         }
     });
 });
 
 // We define another route that will handle bookmark deletion
 app.get('/delete/:id', function(req, res) {
-    bookmarks.splice(req.params.id, 1);
-    res.redirect('/');
+    db.run("DELETE FROM bookmarks WHERE id='" + req.params.id + "'", function(err) {
+        if(err !== null) {
+            res.send(500, "An error has occurred -- " + err);
+        }
+        else {
+            res.redirect('back');
+        }
+    });
 });
 
 /* This will allow Cozy to run your app smoothly but
