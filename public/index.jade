@@ -7,7 +7,7 @@ html(lang="fr")
     h1 Welcome on My Own Bookmarks
     p This application will help you manage your bookmarks!
 
-    form(action="/add", method="post")
+    form(action="add", method="post")
         label Title:
         input(type="text", name="title")
         label Url:
@@ -19,6 +19,6 @@ html(lang="fr")
             li
                 a(href=bookmarks[bookmark].url)= bookmarks[bookmark].title
                 | &nbsp;- (
-                a(href="/delete/#{bookmark}") delete
+                a(href="delete/#{bookmark}") delete
                 | )
         - }
