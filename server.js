@@ -1,8 +1,8 @@
 var http = require('http'),
     express = require('express'),
     app = express(),
-    sqlite3 = require('sqlite3').verbose(),
-    db = new sqlite3.Database('cozy');
+    Schema = require('jugglingdb').Schema,
+    db = new Schema('cozy-adapter', { url: 'http://localhost:9101/' });
 
 /* We add configure directive to tell express to use Jade to
    render templates */
@@ -14,35 +14,32 @@ app.configure(function() {
     app.use(express.bodyParser());
 });
 
-// Database initialization
-db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='bookmarks'", function(err, row) {
-    if(err !== null) {
-        console.log(err);
-    }
-    else if(row == null) {
-        db.run('CREATE TABLE "bookmarks" ("id" INTEGER PRIMARY KEY AUTOINCREMENT, "title" VARCHAR(255), url VARCHAR(255))', function(err) {
-            if(err !== null) {
-                console.log(err);
-            }
-            else {
-                console.log("SQL Table 'bookmarks' initialized.");
-            }
-        });
-    }
-    else {
-        console.log("SQL Table 'bookmarks' already initialized.");
+// We define our data schema
+Bookmark = db.define('bookmarks', {
+    "id": String,
+    "title": String,
+    "url": { "type": String, "default": ""}
+});
+
+// Define the request. You need to do this only once.
+var request = function(doc) {
+      return emit(doc._id, doc);
+};
+Bookmark.defineRequest("all", request, function(err) {
+    if(err != null) {
+        console.log("An error occurred while declaring the request -- " + err);
     }
 });
 
 // We render the templates with the data
 app.get('/', function(req, res) {
-
-    db.all('SELECT * FROM bookmarks ORDER BY title', function(err, row) {
-        if(err !== null) {
-            res.send(500, "An error has occurred -- " + err);
+    Bookmark.request("all", {}, function(err, bookmarks) {
+        if(err != null) {
+            console.log("An error has occurred -- " + err);
         }
         else {
-            res.render('index.jade', {bookmarks: row}, function(err, html) {
+            data = {"bookmarks": bookmarks}
+            res.render('index.jade', data, function(err, html) {
                 res.send(200, html);
             });
         }
@@ -51,11 +48,8 @@ app.get('/', function(req, res) {
 
 // We define a new route that will handle bookmark creation
 app.post('/add', function(req, res) {
-    title = req.body.title;
-    url = req.body.url;
-    sqlRequest = "INSERT INTO 'bookmarks' (title, url) VALUES('" + title + "', '" + url + "')"
-    db.run(sqlRequest, function(err) {
-        if(err !== null) {
+    Bookmark.create(req.body, function(err, bookmark) {
+        if(err != null) {
             res.send(500, "An error has occurred -- " + err);
         }
         else {
@@ -66,12 +60,22 @@ app.post('/add', function(req, res) {
 
 // We define another route that will handle bookmark deletion
 app.get('/delete/:id', function(req, res) {
-    db.run("DELETE FROM bookmarks WHERE id='" + req.params.id + "'", function(err) {
-        if(err !== null) {
-            res.send(500, "An error has occurred -- " + err);
+    Bookmark.find(req.params.id, function(err, bookmark) {
+        if(err != null) {
+            res.send(500, "Bookmark couldn't be retrieved -- " + err);
+        }
+        else if(bookmark == null) {
+            res.send(404, "Bookmark not found");
         }
         else {
-            res.redirect('back');
+            bookmark.destroy(function(err) {
+                if(err != null) {
+                    res.send(500, "An error has occurred -- " + err);
+                }
+                else {
+                    res.redirect('back');
+                }
+            });
         }
     });
 });
