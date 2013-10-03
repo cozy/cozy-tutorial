@@ -10,7 +10,8 @@
   "dependencies": {
     "express": "~3.4.0",
     "jade": "~0.35.0",
-    "sqlite3": "~2.1.17"
+    "jugglingdb": "~0.2.0-40",
+    "jugglingdb-cozy-adapter": "~0.3.12"
   },
   "engines": [
     "node = 0.8.x"
