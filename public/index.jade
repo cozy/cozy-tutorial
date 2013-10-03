@@ -19,6 +19,6 @@ html(lang="fr")
             li
                 a(href=bookmarks[bookmark].url)= bookmarks[bookmark].title
                 | &nbsp;- (
-                a(href="delete/#{bookmark}") delete
+                a(href="delete/#{bookmarks[bookmark].id}") delete
                 | )
         - }
