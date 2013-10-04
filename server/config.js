@@ -8,11 +8,9 @@ module.exports = {
             dumpExceptions: true,
             showStack: true
         }),
-        americano.static(__dirname + '/../public', {
+        americano.static(__dirname + '/../client/public', {
             maxAge: 86400000
-        })/*,
-        americano.set('views', __dirname + '/../client'),
-        americano.engine('.html', require('jade').__express)*/
+        })
     ],
     development: [
         americano.logger('dev')

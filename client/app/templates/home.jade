@@ -1,0 +1,18 @@
+h1 Welcome on My Own Bookmarks
+p This application will help you manage your bookmarks!
+
+form(action="add", method="post")
+    label Title:
+    input(type="text", name="title")
+    label Url:
+    input(type="text", name="url")
+    input(type="submit", value="Add a new bookmark")
+
+ul
+    - for(bookmark in bookmarks) {
+        li
+            a(href=bookmarks[bookmark].url)= bookmarks[bookmark].title
+            | &nbsp;- (
+            a(href="delete/#{bookmarks[bookmark].id}") delete
+            | )
+    - }
