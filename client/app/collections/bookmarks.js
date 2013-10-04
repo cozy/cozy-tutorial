@@ -1,4 +1,5 @@
 Bookmark = require('../models/bookmark');
 module.exports = Bookmarks = Backbone.Collection.extend({
-    model: Bookmark
+    model: Bookmark,
+    url: 'bookmarks'
 });

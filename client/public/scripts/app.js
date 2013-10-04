@@ -90,8 +90,10 @@ window.require.register("application", function(exports, require, module) {
   };
 });
 window.require.register("collections/bookmarks", function(exports, require, module) {
+  Bookmark = require('../models/bookmark');
   module.exports = Bookmarks = Backbone.Collection.extend({
-
+      model: Bookmark,
+      url: 'bookmarks'
   });
 });
 window.require.register("initialize", function(exports, require, module) {
@@ -127,42 +129,97 @@ window.require.register("router", function(exports, require, module) {
       }
   });
 });
+window.require.register("templates/bookmark", function(exports, require, module) {
+  module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+  attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+  var buf = [];
+  with (locals || {}) {
+  var interp;
+  buf.push('<a');
+  buf.push(attrs({ 'href':(bookmark.url) }, {"href":true}));
+  buf.push('>');
+  var __val__ = bookmark.title
+  buf.push(escape(null == __val__ ? "" : __val__));
+  buf.push('</a>&nbsp;- (<a class="delete">delete</a>)');
+  }
+  return buf.join("");
+  };
+});
 window.require.register("templates/home", function(exports, require, module) {
   module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
   attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
   var buf = [];
   with (locals || {}) {
   var interp;
-  buf.push('<h1>Welcome on My Own Bookmarks</h1><p>This application will help you manage your bookmarks!</p><form action="add" method="post"><label>Title:</label><input type="text" name="title"/><label>Url:</label><input type="text" name="url"/><input type="submit" value="Add a new bookmark"/></form><ul>');
-   for(bookmark in bookmarks) {
-  {
-  buf.push('<li><a');
-  buf.push(attrs({ 'href':(bookmarks[bookmark].url) }, {"href":true}));
-  buf.push('>');
-  var __val__ = bookmarks[bookmark].title
-  buf.push(escape(null == __val__ ? "" : __val__));
-  buf.push('</a>&nbsp;- (<a');
-  buf.push(attrs({ 'href':("delete/" + (bookmarks[bookmark].id) + "") }, {"href":true}));
-  buf.push('>delete</a>)</li>');
-  }
-   }
-  buf.push('</ul>');
+  buf.push('<h1>Welcome on My Own Bookmarks</h1><p>This application will help you manage your bookmarks!</p><form><label>Title:</label><input type="text" name="title"/><label>Url:</label><input type="text" name="url"/><input id="add-bookmark" type="submit" value="Add a new bookmark"/></form><ul></ul>');
   }
   return buf.join("");
   };
 });
 window.require.register("views/app_view", function(exports, require, module) {
+  var BookmarkView = require('./bookmark');
+
   module.exports = AppView = Backbone.View.extend({
 
       el: 'body',
       template: require('../templates/home'),
+      events: {
+          "click #add-bookmark": "createBookmark"
+      },
+
+      // initialize is automatically called once after the view is constructed
+      initialize: function() {
+          this.listenTo(this.collection, "add", this.onBookmarkAdded);
+      },
+
+      render: function() {
+
+          // we render the template
+          this.$el.html(this.template());
+
+          // fetch the bookmarks from the database
+          this.collection.fetch();
+      },
+
+      createBookmark: function(event) {
+          // submit button reload the page, we don't want that
+          event.preventDefault();
+
+          // add it to the collection
+          this.collection.create({
+              title: this.$el.find('input[name="title"]').val(),
+              url: this.$el.find('input[name="url"]').val()
+          });
+      },
+
+      onBookmarkAdded: function(bookmark) {
+          // render the specific element
+          bookmarkView = new BookmarkView({
+              model: bookmark
+          });
+          bookmarkView.render();
+          this.$el.find('ul').append(bookmarkView.$el);
+      }
+  });
+});
+window.require.register("views/bookmark", function(exports, require, module) {
+  module.exports = Bookmark = Backbone.View.extend({
+
+      tagName: 'li',
+      template: require('../templates/bookmark'),
+      events: {
+          'click a.delete': 'deleteBookmark'
+      },
 
       render: function() {
           this.$el.html(this.template({
-              bookmarks: this.collection.toJSON()
+              bookmark: this.model.toJSON()
           }));
+      },
 
-          return this;
+      deleteBookmark: function() {
+          this.model.destroy();
+          this.remove();
       }
   });
 });

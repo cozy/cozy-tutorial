@@ -1,13 +1,11 @@
 var bookmarks = require('./bookmarks');
 
 module.exports = {
-  '': {
-    get: bookmarks.list
-  },
-  'add': {
-    post: bookmarks.add
-  },
-  'delete/:id': {
-    get: bookmarks.delete
-  }
+    'bookmarks': {
+        get: bookmarks.list,
+        post: bookmarks.add,
+    },
+    'bookmarks/:id': {
+        del: bookmarks.delete
+    }
 };
