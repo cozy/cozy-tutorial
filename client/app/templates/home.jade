@@ -1,11 +1,11 @@
-h1 Welcome on My Own Bookmarks
-p This application will help you manage your bookmarks!
+h1= t('main title')
+p= t('main description')
 
 form
-    label Title:
+    label= t('form title label')  + ':'
     input(type="text", name="title")
-    label Url:
+    label= t('form url label') + ':'
     input(type="text", name="url")
-    input(id="add-bookmark", type="submit", value="Add a new bookmark")
+    input(id="add-bookmark", type="submit", value="#{t('form submit button')}")
 
 ul

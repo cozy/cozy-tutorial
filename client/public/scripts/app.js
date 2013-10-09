@@ -100,9 +100,60 @@ window.require.register("initialize", function(exports, require, module) {
   // The function called from index.html
   $(document).ready(function() {
       var app = require('application');
-      app.initialize()
+
+      var locale = 'en'; // default locale
+
+      // we'll need to tweak the server to allow this
+      $.ajax('cozy-locale.json', {
+          success: function(data) {
+              locale = data.locale
+              initializeLocale(locale);
+          },
+          error: function() {
+              initializeLocale(locale);
+          }
+      });
+
+      // let's define a function to initialize Polyglot
+      var initializeLocale = function(locale) {
+          var locales = {};
+          try {
+              locales = require('locales/' + locale);
+          }
+          catch(err) {
+              locales = require('locales/en');
+          }
+
+          var polyglot = new Polyglot();
+          // we give polyglot the data
+          polyglot.extend(locales);
+
+          // handy shortcut
+          window.t = polyglot.t.bind(polyglot);
+          app.initialize();
+      };
   });
   
+});
+window.require.register("locales/en", function(exports, require, module) {
+  module.exports = {
+      "main title": "Welcome on My Own Bookmarks",
+      "main description": "This application will help you manage your bookmarks!",
+      "form title label": "Title",
+      "form url label": "Url",
+      "form submit button": "Add a new bookmark",
+      "delete button": "delete"
+  }
+});
+window.require.register("locales/fr", function(exports, require, module) {
+  module.exports = {
+      "main title": "Bienvenue sur My Own Bookmarks",
+      "main description": "Cette application vous permet de gérer vos marque-pages !",
+      "form title label": "Titre",
+      "form url label": "Url",
+      "form submit button": "Ajouter un nouveau marque-page",
+      "delete button": "supprimer"
+  }
 });
 window.require.register("models/bookmark", function(exports, require, module) {
   module.exports = Bookmark = Backbone.Model.extend({
@@ -151,7 +202,21 @@ window.require.register("templates/home", function(exports, require, module) {
   var buf = [];
   with (locals || {}) {
   var interp;
-  buf.push('<h1>Welcome on My Own Bookmarks</h1><p>This application will help you manage your bookmarks!</p><form><label>Title:</label><input type="text" name="title"/><label>Url:</label><input type="text" name="url"/><input id="add-bookmark" type="submit" value="Add a new bookmark"/></form><ul></ul>');
+  buf.push('<h1>');
+  var __val__ = t('main title')
+  buf.push(escape(null == __val__ ? "" : __val__));
+  buf.push('</h1><p>');
+  var __val__ = t('main description')
+  buf.push(escape(null == __val__ ? "" : __val__));
+  buf.push('</p><form><label>');
+  var __val__ = t('form title label')  + ':'
+  buf.push(escape(null == __val__ ? "" : __val__));
+  buf.push('</label><input type="text" name="title"/><label>');
+  var __val__ = t('form url label') + ':'
+  buf.push(escape(null == __val__ ? "" : __val__));
+  buf.push('</label><input type="text" name="url"/><input');
+  buf.push(attrs({ 'id':("add-bookmark"), 'type':("submit"), 'value':("" + (t('form submit button')) + "") }, {"id":true,"type":true,"value":true}));
+  buf.push('/></form><ul></ul>');
   }
   return buf.join("");
   };
