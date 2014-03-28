@@ -1,20 +1,21 @@
 {
   "name": "cozy-tutorial",
   "version": "0.0.1",
-  "description": "My first Cozy application.",
+  "description": "An application to get you started with web app development and Cozy.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mycozycloud/cozy-tutorial.git"
+  },
   "main": "server.js",
   "dependencies": {
-    "express": "3.4.0"
+    "express": "~3.4.0",
+    "jade": "~0.35.0",
+    "sqlite3": "~2.1.17"
   },
-  "devDependencies": {
-  },
+  "engines": [
+    "node = 0.8.x"
+  ],
   "scripts": {
     "start": "node server.js"
-  },
-  "repository": "",
-  "author": "",
-  "license": "BSD",
-  "readmeFilename": "README.md",
-  "cozy-permissions": {
   }
 }
