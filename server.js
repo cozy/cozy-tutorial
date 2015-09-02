@@ -2,18 +2,19 @@ var http = require('http'),
     express = require('express'),
     app = express(),
     sqlite3 = require('sqlite3').verbose(),
+    bodyParser = require('body-parser'),
     db = new sqlite3.Database('cozy');
 
 /* We add configure directive to tell express to use Jade to
    render templates */
-app.configure(function() {
-    app.set('views', __dirname + '/public');
-    app.engine('.html', require('jade').__express);
+app.set('views', __dirname + '/public');
+app.engine('.html', require('jade').__express);
 
-    // Allows express to get data from POST requests
-    app.use(express.json());
-    app.use(express.urlencoded());
-});
+// Allows express to get data from POST requests
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
+app.use(bodyParser.json());
 
 // Database initialization
 db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='bookmarks'", function(err, row) {
@@ -40,11 +41,11 @@ app.get('/', function(req, res) {
 
     db.all('SELECT * FROM bookmarks ORDER BY title', function(err, row) {
         if(err !== null) {
-            res.send(500, "An error has occurred -- " + err);
+            res.status(500).send("An error has occurred -- " + err);
         }
         else {
             res.render('index.jade', {bookmarks: row}, function(err, html) {
-                res.send(200, html);
+                res.status(200).send(html);
             });
         }
     });
@@ -57,7 +58,7 @@ app.post('/add', function(req, res) {
     sqlRequest = "INSERT INTO 'bookmarks' (title, url) VALUES('" + title + "', '" + url + "')"
     db.run(sqlRequest, function(err) {
         if(err !== null) {
-            res.send(500, "An error has occurred -- " + err);
+            res.status(500).send("An error has occurred -- " + err);
         }
         else {
             res.redirect('back');
@@ -69,7 +70,7 @@ app.post('/add', function(req, res) {
 app.get('/delete/:id', function(req, res) {
     db.run("DELETE FROM bookmarks WHERE id='" + req.params.id + "'", function(err) {
         if(err !== null) {
-            res.send(500, "An error has occurred -- " + err);
+            res.status(500).send("An error has occurred -- " + err);
         }
         else {
             res.redirect('back');
