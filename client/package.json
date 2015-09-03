@@ -1,0 +1,21 @@
+{
+  "name": "cozy-tutorial-angularjs",
+  "version": "0.0.1",
+  "description": "An application to get you started with web app development and Cozy.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mycozycloud/cozy-tutorial.git"
+  },
+  "scripts": {
+    "start": "brunch watch --server"
+  },
+  "dependencies": {
+    "javascript-brunch": "> 1.0 < 1.5",
+    "css-brunch": "> 1.0 < 1.3",
+    "uglify-js-brunch": "> 1.0 < 1.3",
+    "clean-css-brunch": "> 1.0 < 1.3"
+  },
+  "scripts": {
+    "start": "node server.js"
+  }
+}
