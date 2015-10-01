@@ -4,7 +4,7 @@
   "description": "An application to get you started with web app development and Cozy.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mycozycloud/cozy-tutorial.git"
+    "url": "https://github.com/cozy/cozy-tutorial.git"
   },
   "main": "server.js",
   "dependencies": {
@@ -14,7 +14,7 @@
     "sqlite3": "^3.0.8"
   },
   "engines": [
-    "node = 0.8.x"
+    "node >= 0.10.x"
   ],
   "scripts": {
     "start": "node server.js"
